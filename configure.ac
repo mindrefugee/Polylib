@@ -14,7 +14,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([Polylib], [2.6.4], [keno@riken.jp],[Polylib])
+AC_INIT([Polylib], [2.6.4-dev_a], [keno@riken.jp],[Polylib])
 AM_INIT_AUTOMAKE()
 AC_CONFIG_SRCDIR([src/MPIPolylib.cxx])
 AC_CONFIG_HEADERS([config.h])
@@ -147,7 +147,25 @@ AC_SUBST(PL_CFLAGS)
 PL_LDFLAGS="-L$PL_INST_DIR/lib"
 AC_SUBST(PL_LDFLAGS)
 
+#
+# handle PL_REAL
+#
+# This valiable holds the type of real value in whole Polylib system.
+AC_MSG_CHECKING([\$(PL_REAL) real type to be used])
+# if it is "float" exactly, PL_REAL is defined to "float".
+# if it is not, PL_REAL is defined to "double" as default.
+if test "$PL_REAL" = "float"; then
+#do nothing
+AC_MSG_RESULT("$PL_REAL")
+AC_MSG_WARN([PL_REAL is set to float!])
+#    echo PL_REAL is set to float!
+else
+ PL_REAL="double"
+AC_MSG_RESULT("$PL_REAL")
+fi
 
+# AC_SUBST(PL_REAL)  we do not need PL_REAL for Makefiles
+AC_DEFINE_UNQUOTED(PL_REAL,$PL_REAL,[Real valiable type to whole Polylib.])
 
 #
 # MAKE_SUB_DIRS
@@ -194,7 +212,7 @@ AC_TYPE_SIZE_T
 # Checks for library functions.
 #
 AC_FUNC_MALLOC
-AC_CHECK_FUNCS([gettimeofday memset strchr strstr])
+AC_CHECK_FUNCS([gettimeofday memset strchr strstr strcpy])
 
 
 
