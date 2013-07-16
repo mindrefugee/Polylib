@@ -14,11 +14,13 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([Polylib], [2.6.4-dev_a], [keno@riken.jp],[Polylib])
+AC_INIT([Polylib], [2.6.4-dev_aa], [keno@riken.jp],[Polylib])
 AM_INIT_AUTOMAKE()
 AC_CONFIG_SRCDIR([src/MPIPolylib.cxx])
 AC_CONFIG_HEADERS([config.h])
 
+# add to switch libtool
+AC_CONFIG_MACRO_DIR([m4])
 
 #
 # revision No.
@@ -110,6 +112,19 @@ fi
 AC_ARG_WITH(example, [AC_HELP_STRING([--with-example=(yes|no)],[make example [yes]])], , with_example=yes)
 
 
+
+#
+# enable/unenable shared library
+#
+dnl AC_ARG_ENABLE(shared, [AC_HELP_STRING([--enable-shared=(yes|no)],[make shared library [yes]])], , enable_shared=yes)
+
+dnl if test "$enable_shared" != "yes" ; then
+dnl LT_STATIC="-static"
+dnl else
+dnl LT_STATIC=""
+dnl fi
+dnl AC_SUBST(LT_STATIC)
+
 #
 # Polylib special flags
 #
@@ -185,8 +200,11 @@ AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_CPP
 AC_PROG_MAKE_SET
-AC_PROG_RANLIB
-
+#AC_PROG_RANLIB
+# add to switch libtool
+AC_PROG_LIBTOOL
+AM_PROG_LIBTOOL
+AC_SUBST(LIBTOOL_DEPS)
 
 #
 # Checks for libraries.

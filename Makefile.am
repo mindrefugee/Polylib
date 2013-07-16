@@ -18,6 +18,12 @@ CLEANFILES     = $(bin_SCRIPTS)
 EXTRA_DIST     = polylib-config.in LICENSE Makefile_hand src/Makefile_hand \
                  src/depend.inc polylib-uname doc/doxygen/Doxyfile
 dist_data_DATA = AUTHORS COPYING ChangeLog README LICENSE
+ACLOCAL_AMFLAGS = -I m4
+
+# to check libtool is upto date
+LIBTOOL_DEPS = @LIBTOOL_DEPS@
+libtool:$(LIBTOOL_DEPS)
+	$(SHELL) ./config.status --recheck
 
 clean-local:
 	find ./ -name *.obj | xargs rm -f
