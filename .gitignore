@@ -11,3 +11,21 @@
 *.lai
 *.la
 *.a
+
+#Files to be generated
+Makefile
+config.h
+*.log
+stamp-h1
+*~
+#*#
+polylib-config
+config.status
+autom4te.cache/
+examples/.deps/
+src/.deps/
+examples/test
+examples/test2
+examples/test_mpi
+examples/test_mpi2
+examples/test_mpi3

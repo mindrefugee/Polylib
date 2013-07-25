@@ -54,31 +54,37 @@ test_mpi3_SOURCES  = \
 test_mpi3_CXXFLAGS = -I$(top_builddir)/include @TP_CFLAGS@ @MPI_CFLAGS@
 
 test_LDADD = \
-    -L$(top_builddir)/src -lPOLY \
+    -L$(top_builddir)/src/.libs -lPOLY \
     @MPI_LDFLAGS@ \
     @MPI_LIBS@ \
     @TP_LDFLAGS@ -lstdc++
 
+# test_LDADD = \
+#     -L$(top_builddir)/src -lPOLY \
+#     @MPI_LDFLAGS@ \
+#     @MPI_LIBS@ \
+#     @TP_LDFLAGS@
+
 test2_LDADD = \
-    -L$(top_builddir)/src -lPOLY \
+    -L$(top_builddir)/src/.libs -lPOLY \
     @MPI_LDFLAGS@ \
     @MPI_LIBS@ \
     @TP_LDFLAGS@ -lstdc++
 
 test_mpi_LDADD = \
-    -L$(top_builddir)/src -lMPIPOLY \
+    -L$(top_builddir)/src/.libs -lMPIPOLY \
     @MPI_LDFLAGS@ \
     @MPI_LIBS@ \
     @TP_LDFLAGS@ -lstdc++
 
 test_mpi2_LDADD = \
-    -L$(top_builddir)/src -lMPIPOLY \
+    -L$(top_builddir)/src/.libs -lMPIPOLY \
     @MPI_LDFLAGS@ \
     @MPI_LIBS@ \
     @TP_LDFLAGS@ -lstdc++
 
 test_mpi3_LDADD = \
-    -L$(top_builddir)/src -lMPIPOLY \
+    -L$(top_builddir)/src/.libs -lMPIPOLY \
     @MPI_LDFLAGS@ \
     @MPI_LIBS@ \
     @TP_LDFLAGS@ -lstdc++

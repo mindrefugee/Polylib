@@ -12,9 +12,13 @@
 
 
 if SERIALTARGET
-  lib_LIBRARIES = libPOLY.a
-  libPOLY_a_CXXFLAGS = @TP_CFLAGS@ -I$(top_builddir)/include
-  libPOLY_a_SOURCES = \
+#  lib_LIBRARIES = libPOLY.a
+#  libPOLY_a_CXXFLAGS = @TP_CFLAGS@ -I$(top_builddir)/include
+#  libPOLY_a_SOURCES =  
+  lib_LTLIBRARIES = libPOLY.la
+  libPOLY_la_CXXFLAGS = @TP_CFLAGS@ -I$(top_builddir)/include
+#  libPOLY_la_LDFLAGS = @LT_STATIC@
+  libPOLY_la_SOURCES = \
      Polylib.cxx \
      c_lang/CPolylib.cxx \
      file_io/stl.cxx \
@@ -26,9 +30,13 @@ if SERIALTARGET
      polygons/VTree.cxx \
      util/time.cxx
 else
-  lib_LIBRARIES = libMPIPOLY.a
-  libMPIPOLY_a_CXXFLAGS = @MPI_CFLAGS@ @TP_CFLAGS@ -I$(top_builddir)/include
-  libMPIPOLY_a_SOURCES = \
+  # lib_LIBRARIES = libMPIPOLY.a
+  # libMPIPOLY_a_CXXFLAGS = @MPI_CFLAGS@ @TP_CFLAGS@ -I$(top_builddir)/include
+  # libMPIPOLY_a_SOURCES = 
+  lib_LTLIBRARIES = libMPIPOLY.la
+  libMPIPOLY_la_CXXFLAGS = @MPI_CFLAGS@ @TP_CFLAGS@ -I$(top_builddir)/include
+#  libMPIPOLY_la_LDFLAGS = @LT_STATIC@
+  libMPIPOLY_la_SOURCES = \
      MPIPolylib.cxx \
      Polylib.cxx \
      c_lang/CMPIPolylib.cxx \
@@ -71,3 +79,4 @@ nobase_include_HEADERS = \
   $(top_builddir)/include/Version.h
 
 EXTRA_DIST = Makefile_hand depend.inc
+

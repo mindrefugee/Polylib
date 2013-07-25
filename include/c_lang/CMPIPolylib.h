@@ -21,6 +21,19 @@ extern "C" {  // for C++
 #include "common/PolylibStat.h"
 #include "c_lang/CPolylib.h"
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+//avoid error in debian 7.0 can not find strcpy and
+// prepare for the future.
+#ifdef HAVE_STRING_H
+#ifdef HAVE_STRCPY
+#include <string.h>
+#endif
+#endif
+
+
 ///
 /// C言語用MPIPolylib（MPI版）
 ///

@@ -14,11 +14,13 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([Polylib], [2.6.8], [keno@riken.jp],[Polylib])
+AC_INIT([Polylib], [2.6.8-dev_aa], [keno@riken.jp],[Polylib])
 AM_INIT_AUTOMAKE()
 AC_CONFIG_SRCDIR([src/MPIPolylib.cxx])
 AC_CONFIG_HEADERS([config.h])
 
+# add to switch libtool
+AC_CONFIG_MACRO_DIR([m4])
 
 #
 # revision No.
@@ -121,6 +123,19 @@ AC_ARG_WITH(example, [AC_HELP_STRING([--with-example=(no|yes)],[make example [no
 
 
 
+
+#
+# enable/unenable shared library
+#
+dnl AC_ARG_ENABLE(shared, [AC_HELP_STRING([--enable-shared=(yes|no)],[make shared library [yes]])], , enable_shared=yes)
+
+dnl if test "$enable_shared" != "yes" ; then
+dnl LT_STATIC="-static"
+dnl else
+dnl LT_STATIC=""
+dnl fi
+dnl AC_SUBST(LT_STATIC)
+
 #
 # Polylib special flags
 #
@@ -146,7 +161,25 @@ AC_SUBST(PL_CFLAGS)
 PL_LDFLAGS="-L$PL_INST_DIR/lib"
 AC_SUBST(PL_LDFLAGS)
 
+#
+# handle PL_REAL
+#
+# This valiable holds the type of real value in whole Polylib system.
+AC_MSG_CHECKING([\$(PL_REAL) real type to be used])
+# if it is "float" exactly, PL_REAL is defined to "float".
+# if it is not, PL_REAL is defined to "double" as default.
+if test "$PL_REAL" = "float"; then
+#do nothing
+AC_MSG_RESULT("$PL_REAL")
+AC_MSG_WARN([PL_REAL is set to float!])
+#    echo PL_REAL is set to float!
+else
+ PL_REAL="double"
+AC_MSG_RESULT("$PL_REAL")
+fi
 
+# AC_SUBST(PL_REAL)  we do not need PL_REAL for Makefiles
+AC_DEFINE_UNQUOTED(PL_REAL,$PL_REAL,[Real valiable type to whole Polylib.])
 
 #
 # MAKE_SUB_DIRS
@@ -165,8 +198,11 @@ AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_CPP
 AC_PROG_MAKE_SET
-AC_PROG_RANLIB
-
+#AC_PROG_RANLIB
+# add to switch libtool
+AC_PROG_LIBTOOL
+AM_PROG_LIBTOOL
+AC_SUBST(LIBTOOL_DEPS)
 
 #
 # Checks for libraries.
@@ -191,7 +227,7 @@ AC_TYPE_SIZE_T
 # Checks for library functions.
 #
 AC_FUNC_MALLOC
-AC_CHECK_FUNCS([gettimeofday memset strchr strstr])
+AC_CHECK_FUNCS([gettimeofday memset strchr strstr strcpy])
 
 
 

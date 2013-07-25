@@ -19,6 +19,11 @@ extern "C" {  // for C++
 
 #include "common/PolylibStat.h"
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+
 ///
 /// C言語用Polylib（単一プロセス版）
 ///
