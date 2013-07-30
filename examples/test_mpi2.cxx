@@ -20,14 +20,17 @@
 using namespace std;
 using namespace PolylibNS;
 
+#define PL_REAL double
+
+template <typename T>
 struct MyParallelInfo {
-  float bpos[3]; //基準座標
+  T bpos[3]; //基準座標
   unsigned bbsize[3]; //number of voxel 計算領域
   unsigned gcsize[3]; //number of guidecell voxel
-  float dx[3]; //size of voxel
+  T dx[3]; //size of voxel
 };
 
-static MyParallelInfo myParaInfos[4] = {
+static MyParallelInfo<PL_REAL> myParaInfos[4] = {
   {{-1100, -1800,-1800,}, {18,18,18,}, {1, 1,1,}, {100,100,100} },
   {{-1100,     0,-1800,}, {18,18,18,}, {1, 1,1,}, {100,100,100} },
   {{-1100, -1800,    0,}, {18,18,18,}, {1, 1,1,}, {100,100,100} },
@@ -47,7 +50,7 @@ int main(int argc, char** argv ){
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);
   cout << "Starting program on rank:"<<rank<<endl;
 
-  MPIPolylib* p_polylib = MPIPolylib::get_instance();
+  MPIPolylib<PL_REAL>* p_polylib = MPIPolylib<PL_REAL>::get_instance();
 
   //  p_polylib->set_factory(new MyGroupFactory() );
 
@@ -58,11 +61,6 @@ int main(int argc, char** argv ){
 				       myParaInfos[rank].dx);
 
   if(stat !=PLSTAT_OK) return -1;
-
-
-
-
-
 
   string  config_filename;
   if(rank ==0) {

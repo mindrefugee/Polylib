@@ -698,6 +698,7 @@ PL_CFLAGS
 SERIALTARGET_FALSE
 SERIALTARGET_TRUE
 PL_LIBS
+TP_MPI_LDFLAGS
 TP_LDFLAGS
 TP_CFLAGS
 TP_DIR
@@ -3024,10 +3025,13 @@ fi
 
 
 
+
 if test "$with_parser" != "none" ; then
   TP_DIR=$with_parser;
   TP_CFLAGS=`$TP_DIR/bin/tp-config --cflags`
   TP_LDFLAGS=`$TP_DIR/bin/tp-config --libs`
+  TP_MPI_LDFLAGS=`$TP_DIR/bin/tp-config --mpi-libs`
+
 else
   echo "  Error: TextParser library is not specified."
   echo "         Specify --with-parser option."
@@ -3114,6 +3118,9 @@ fi
 cat >>confdefs.h <<_ACEOF
 #define PL_REAL $PL_REAL
 _ACEOF
+
+
+
 
 
 #

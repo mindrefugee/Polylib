@@ -75,19 +75,19 @@ test_mpi_LDADD = \
     -L$(top_builddir)/src/.libs -lMPIPOLY \
     @MPI_LDFLAGS@ \
     @MPI_LIBS@ \
-    @TP_LDFLAGS@ -lstdc++
+    @TP_MPI_LDFLAGS@ -lstdc++
 
 test_mpi2_LDADD = \
     -L$(top_builddir)/src/.libs -lMPIPOLY \
     @MPI_LDFLAGS@ \
     @MPI_LIBS@ \
-    @TP_LDFLAGS@ -lstdc++
+    @TP_MPI_LDFLAGS@ -lstdc++
 
 test_mpi3_LDADD = \
     -L$(top_builddir)/src/.libs -lMPIPOLY \
     @MPI_LDFLAGS@ \
     @MPI_LIBS@ \
-    @TP_LDFLAGS@ -lstdc++
+    @TP_MPI_LDFLAGS@ -lstdc++
 
 dist_noinst_DATA=
 

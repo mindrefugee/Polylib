@@ -16,8 +16,9 @@ if SERIALTARGET
 #  libPOLY_a_CXXFLAGS = @TP_CFLAGS@ -I$(top_builddir)/include
 #  libPOLY_a_SOURCES =  
   lib_LTLIBRARIES = libPOLY.la
-  libPOLY_la_CXXFLAGS = @TP_CFLAGS@ -I$(top_builddir)/include
+  libPOLY_la_CXXFLAGS = @TP_CFLAGS@ -I$(top_builddir)/include 
 #  libPOLY_la_LDFLAGS = @LT_STATIC@
+#  libPOLY_la_LDFLAGS = 
   libPOLY_la_SOURCES = \
      Polylib.cxx \
      c_lang/CPolylib.cxx \

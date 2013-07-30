@@ -14,7 +14,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([Polylib], [2.6.8-dev_aa], [keno@riken.jp],[Polylib])
+AC_INIT([Polylib], [2.6.8-dev_ab], [keno@riken.jp],[Polylib])
 AM_INIT_AUTOMAKE()
 AC_CONFIG_SRCDIR([src/MPIPolylib.cxx])
 AC_CONFIG_HEADERS([config.h])
@@ -103,11 +103,14 @@ AC_ARG_WITH(parser, [AC_HELP_STRING([--with-parser=dir],[Specify TextParser inst
 AC_SUBST(TP_DIR)
 AC_SUBST(TP_CFLAGS)
 AC_SUBST(TP_LDFLAGS)
+AC_SUBST(TP_MPI_LDFLAGS)
 
 if test "$with_parser" != "none" ; then
   TP_DIR=$with_parser;
   TP_CFLAGS=`$TP_DIR/bin/tp-config --cflags`
   TP_LDFLAGS=`$TP_DIR/bin/tp-config --libs`
+  TP_MPI_LDFLAGS=`$TP_DIR/bin/tp-config --mpi-libs`
+
 else
   echo "  Error: TextParser library is not specified."
   echo "         Specify --with-parser option."
@@ -180,6 +183,9 @@ fi
 
 # AC_SUBST(PL_REAL)  we do not need PL_REAL for Makefiles
 AC_DEFINE_UNQUOTED(PL_REAL,$PL_REAL,[Real valiable type to whole Polylib.])
+
+
+
 
 #
 # MAKE_SUB_DIRS

@@ -252,6 +252,7 @@ STRIP = @STRIP@
 TP_CFLAGS = @TP_CFLAGS@
 TP_DIR = @TP_DIR@
 TP_LDFLAGS = @TP_LDFLAGS@
+TP_MPI_LDFLAGS = @TP_MPI_LDFLAGS@
 VERSION = @VERSION@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
@@ -312,8 +313,9 @@ top_srcdir = @top_srcdir@
 #  libPOLY_a_CXXFLAGS = @TP_CFLAGS@ -I$(top_builddir)/include
 #  libPOLY_a_SOURCES =  
 @SERIALTARGET_TRUE@lib_LTLIBRARIES = libPOLY.la
-@SERIALTARGET_TRUE@libPOLY_la_CXXFLAGS = @TP_CFLAGS@ -I$(top_builddir)/include
+@SERIALTARGET_TRUE@libPOLY_la_CXXFLAGS = @TP_CFLAGS@ -I$(top_builddir)/include 
 #  libPOLY_la_LDFLAGS = @LT_STATIC@
+#  libPOLY_la_LDFLAGS = 
 @SERIALTARGET_TRUE@libPOLY_la_SOURCES = \
 @SERIALTARGET_TRUE@     Polylib.cxx \
 @SERIALTARGET_TRUE@     c_lang/CPolylib.cxx \

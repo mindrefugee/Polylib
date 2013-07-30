@@ -12,11 +12,18 @@
 #ifndef polylib_trimesh_h
 #define polylib_trimesh_h
 
+#include <vector>
+#include <algorithm>
+#include "file_io/TriMeshIO.h"
+
+
+#define M_MAX_ELEMENTS 15	/// VTreeのノードが持つ最大要素数
+
 namespace PolylibNS {
 
-class Polygons;
-class VTree;
-class PrivateTriangle;
+template <typename T> class Polygons;
+template <typename T> class VTree;
+template <typename T> class PrivateTriangle;
 
 ////////////////////////////////////////////////////////////////////////////
 ///
@@ -24,7 +31,8 @@ class PrivateTriangle;
 /// 三角形ポリゴン集合を管理するクラス（KD木用に特化したクラス)。
 ///
 ////////////////////////////////////////////////////////////////////////////
-class TriMesh : public Polygons {
+template <typename T>
+class TriMesh : public Polygons<T> {
 public:
 	///
 	/// コンストラクタ。
@@ -44,7 +52,7 @@ public:
 	///  @param[in] trias 設定する三角形ポリゴンリスト。
 	///
 	void init(
-		const std::vector<PrivateTriangle*>	*trias
+		const std::vector<PrivateTriangle<T>*>	*trias
 	);
 
 	///
@@ -55,7 +63,7 @@ public:
 	/// @attention KD木の再構築は行わない。
 	///
 	void add(
-		const std::vector<PrivateTriangle*>  *trias
+		const std::vector<PrivateTriangle<T>*>  *trias
 	);
 
 	///
@@ -66,7 +74,7 @@ public:
 	///
 	POLYLIB_STAT import(
 		const std::map<std::string, std::string> fmap,
-		float scale = 1.0
+		T scale = 1.0
 	);
 
 	///
@@ -92,8 +100,8 @@ public:
 	///  @attention MPIPolylib内での利用が目的なので、ユーザは使用しないこと。
 	///  @attention	オーバーロードメソッドあり。
 	///
-	const std::vector<PrivateTriangle*>* search(
-		BBox	*bbox, 
+	const std::vector<PrivateTriangle<T>*>* search(
+		BBox<T>	*bbox, 
 		bool	every
 	) const;
 
@@ -110,9 +118,9 @@ public:
 	///  @attention	オーバーロードメソッドあり。
 	///
 	POLYLIB_STAT search(
-		BBox							*bbox,
+		BBox<T>							*bbox,
 		bool							every,
-		std::vector<PrivateTriangle*>	*tri_list
+		std::vector<PrivateTriangle<T>*>	*tri_list
 	) const;
 
 	///
@@ -125,8 +133,8 @@ public:
 	///	 @attention	三角形ポリゴンのメモリ領域は新たにPolylib内で確保される。
 	///  @attention MPIPolylib内での利用が目的なので、ユーザは使用しないこと。
 	///
-	const std::vector<PrivateTriangle*>* linear_search(
-		BBox	*q_bbox, 
+	const std::vector<PrivateTriangle<T>*>* linear_search(
+		BBox<T>	*q_bbox, 
 		bool	every
 	) const;
 
@@ -143,9 +151,9 @@ public:
 	///  @attention	オーバーロードメソッドあり。
 	///
 	POLYLIB_STAT linear_search(
-		BBox							*q_bbox, 
+		BBox<T>							*q_bbox, 
 		bool							every,
-		std::vector<PrivateTriangle*>	*tri_list
+		std::vector<PrivateTriangle<T>*>	*tri_list
 	) const;
 
 	///
@@ -154,8 +162,8 @@ public:
 	///  @param[in]     pos     指定位置
 	///  @return 検索されたポリゴン
 	///
-	const PrivateTriangle* search_nearest(
-		const Vec3f&    pos
+	const PrivateTriangle<T>* search_nearest(
+		const Vec3<T>&    pos
 	) const;
 
 	///
@@ -173,7 +181,7 @@ public:
 	///
 	/// TriMeshクラスが管理しているBoundingBoxを返す。
 	///
-	BBox get_bbox() const {
+	BBox<T> get_bbox() const {
 		return m_bbox;
 	}
 
@@ -182,7 +190,7 @@ public:
 	///
 	/// @return KD木クラス。
 	///
-	VTree *get_vtree() const {
+	VTree<T> *get_vtree() const {
 		return m_vtree;
 	}
 
@@ -196,14 +204,309 @@ private:
 	// クラス変数
 	//=======================================================================
 	/// 全三角形ポリゴンを外包するBoundingBox。
-	BBox	m_bbox;
+	BBox<T>	m_bbox;
 
 	/// KD木クラス。
-	VTree	*m_vtree;
+	VTree<T>	*m_vtree;
 
 	/// MAX要素数。
 	int		m_max_elements;
 };
+
+// public /////////////////////////////////////////////////////////////////////
+template <typename T>
+TriMesh<T>::TriMesh()
+{
+	m_vtree = NULL;
+	this->m_tri_list = NULL;
+	m_max_elements = M_MAX_ELEMENTS;
+}
+
+// public /////////////////////////////////////////////////////////////////////
+template <typename T>
+TriMesh<T>::~TriMesh()
+{
+	delete m_vtree;
+	if (this->m_tri_list != NULL) {
+	  typename std::vector<PrivateTriangle<T>*>::iterator itr;
+		for (itr = this->m_tri_list->begin(); itr != this->m_tri_list->end(); itr++) {
+			delete *itr;
+		}
+		this->m_tri_list->clear();
+	}
+	delete this->m_tri_list;
+}
+
+// public /////////////////////////////////////////////////////////////////////
+template <typename T>
+void TriMesh<T>::init(const std::vector<PrivateTriangle<T>*>* trias)
+{
+	init_tri_list();
+	typename std::vector<PrivateTriangle<T>*>::const_iterator itr;
+	for (itr = trias->begin(); itr != trias->end(); itr++) {
+		this->m_tri_list->push_back(
+		    new PrivateTriangle<T>((*itr)->get_vertex(),	
+					  (*itr)->get_normal(), 
+					  (*itr)->get_area(),
+					  (*itr)->get_id())
+		);
+	}
+}
+
+// public /////////////////////////////////////////////////////////////////////
+// std::sort用ファンクタ
+template <typename T>
+struct PrivTriaLess{
+	bool operator()( const PrivateTriangle<T> *l, const PrivateTriangle<T> *r ) const
+	{
+		return l->get_id() < r->get_id();
+	}
+};
+// std::equal用ファンクタ
+template <typename T>
+struct PrivTriaEqual{
+	bool operator()( const PrivateTriangle<T> *l, const PrivateTriangle<T> *r ) const
+	{
+		return l->get_id() == r->get_id();
+	}
+};
+
+// public /////////////////////////////////////////////////////////////////////
+template <typename T>
+void
+TriMesh<T>::add(
+	const std::vector<PrivateTriangle<T>*> *trias
+)
+{
+#ifdef DEBUG
+	PL_DBGOSH << "TriMesh<T>::add_triangles() in." << endl;
+#endif
+	unsigned int i;
+
+	if (this->m_tri_list == NULL) {
+		this->m_tri_list = new std::vector<PrivateTriangle<T>*>;
+	}
+
+	// ひとまず全部追加
+	for( i=0; i<trias->size(); i++ ) {
+		this->m_tri_list->push_back( new PrivateTriangle<T>(*(trias->at(i))) );
+	}
+
+	// 三角形リストをID順にソート
+	std::sort( this->m_tri_list->begin(), this->m_tri_list->end(), PrivTriaLess<T>() );
+
+	// ID重複ぶんを削除
+	this->m_tri_list->erase(
+	std::unique(this->m_tri_list->begin(), this->m_tri_list->end(), PrivTriaEqual<T>()),
+		this->m_tri_list->end());
+}
+
+// public /////////////////////////////////////////////////////////////////////
+template <typename T>
+POLYLIB_STAT TriMesh<T>::import(const std::map<std::string, std::string> fmap, T scale)
+{
+	init_tri_list();
+	return TriMeshIO::load<T>(this->m_tri_list, fmap, scale);
+}
+
+// public /////////////////////////////////////////////////////////////////////
+template <typename T>
+POLYLIB_STAT TriMesh<T>::build()
+{
+	BBox<T> bbox;
+	typename std::vector<PrivateTriangle<T>*>::iterator itr;
+
+	/// TriMeshクラスに含まれる全三角形ポリゴンを外包するBoundingBoxを計算
+	bbox.init();
+	for (itr = this->m_tri_list->begin(); itr != this->m_tri_list->end(); itr++) {
+		const Vec3<T>* vtx_arr = (*itr)->get_vertex();
+		for (int i = 0; i < 3; i++) {
+			bbox.add(vtx_arr[i]);
+		}
+	}
+	m_bbox = bbox;
+#define DEBUG
+#ifdef DEBUG
+	Vec3<T> min = m_bbox.getPoint(0);
+	Vec3<T> max = m_bbox.getPoint(7);
+	PL_DBGOSH << "TriMesh::build:min=(" <<min<< "),max=(" <<max<< ")" << std::endl;
+#endif
+
+	// 木構造作成
+	if (m_vtree != NULL) delete m_vtree;
+	m_vtree = new VTree<T>(m_max_elements, m_bbox, this->m_tri_list);
+	return PLSTAT_OK;
+}
+
+// public /////////////////////////////////////////////////////////////////////
+template <typename T>
+int TriMesh<T>::triangles_num() {
+	if (this->m_tri_list == NULL)		return 0;
+	else						return this->m_tri_list->size();
+}
+
+// public /////////////////////////////////////////////////////////////////////
+template <typename T>
+const std::vector<PrivateTriangle<T>*> *TriMesh<T>::search(
+	BBox<T>	*bbox, 
+	bool	every
+) const {
+#ifdef DEBUG
+	Vec3<T> min = bbox->getPoint(0);
+	Vec3<T> max = bbox->getPoint(7);
+	PL_DBGOSH << "TriMesh::search:min=(" <<min<< "),max=(" <<max<< ")" << std::endl;
+#endif
+
+	return m_vtree->search(bbox, every);
+}
+
+// public /////////////////////////////////////////////////////////////////////
+template <typename T>
+POLYLIB_STAT TriMesh<T>::search(
+	BBox<T>						*bbox, 
+	bool						every, 
+	std::vector<PrivateTriangle<T>*>	*tri_list
+) const {
+	return m_vtree->search(bbox, every, tri_list);
+}
+
+// public /////////////////////////////////////////////////////////////////////
+template <typename T>
+const std::vector<PrivateTriangle<T>*>* TriMesh<T>::linear_search(
+	BBox<T>	*q_bbox, 
+	bool	every
+) const {
+	std::vector<PrivateTriangle<T>*>		   *tri_list = new std::vector<PrivateTriangle<T>*>;
+	typename std::vector<PrivateTriangle<T>*>::iterator itr;
+
+	for (itr = this->m_tri_list->begin(); itr != this->m_tri_list->end(); itr++) {
+		BBox<T> bbox;
+		bbox.init();
+		const Vec3<T>* vtx_arr = (*itr)->get_vertex();
+		for (int i = 0; i < 3; i++) {
+			bbox.add(vtx_arr[i]);
+		}
+		if (every == true) {
+			if (q_bbox->contain(vtx_arr[0]) == true && 
+				q_bbox->contain(vtx_arr[1]) == true &&
+				q_bbox->contain(vtx_arr[2]) == true)
+			{
+				tri_list->push_back(*itr);
+			}
+		}
+		else {
+#ifdef OLD_DEF
+			if (bbox.crossed(*q_bbox) == true				||
+				bbox.contain(q_bbox->getPoint(0)) == true	||
+				q_bbox->crossed(bbox) == true				||
+				q_bbox->contain(bbox.getPoint(0)) == true) {
+#else
+			if (bbox.crossed(*q_bbox) == true) {
+#endif
+				tri_list->push_back(*itr);
+			}
+		}
+	}
+	return tri_list;
+}
+
+// public /////////////////////////////////////////////////////////////////////
+template <typename T>
+POLYLIB_STAT TriMesh<T>::linear_search(
+	BBox<T>						*q_bbox, 
+	bool						every, 
+	std::vector<PrivateTriangle<T>*>	*tri_list
+) const {
+	if (tri_list == NULL) return PLSTAT_ARGUMENT_NULL;
+
+	typename std::vector<PrivateTriangle<T>*>::iterator itr;
+
+	for (itr = this->m_tri_list->begin(); itr != this->m_tri_list->end(); itr++) {
+		BBox<T> bbox;
+		bbox.init();
+		const Vec3<T>* vtx_arr = (*itr)->get_vertex();
+		for (int i = 0; i < 3; i++) {
+			bbox.add(vtx_arr[i]);
+		}
+		if (every == true) {
+			if (q_bbox->contain(vtx_arr[0]) == true	&&
+				q_bbox->contain(vtx_arr[1]) == true	&&
+				q_bbox->contain(vtx_arr[2]) == true) {
+				tri_list->push_back(*itr);
+#ifdef DEBUG
+			PL_DBGOSH << "TriMesh<T>::linear_search:IN TRUE" << std::endl;
+			PL_DBGOSH << "     vertex 0:" << vtx_arr[0] << std::endl;
+			PL_DBGOSH << "     vertex 1:" << vtx_arr[1] << std::endl;
+			PL_DBGOSH << "     vertex 2:" << vtx_arr[2] << std::endl;
+#endif
+			}
+		}
+		else {
+#ifdef OLD_DEF
+			if (bbox.crossed(*q_bbox) == true				||
+				q_bbox->crossed(bbox) == true				||
+				bbox.contain(q_bbox->getPoint(0)) == true	||
+				q_bbox->contain(bbox.getPoint(0)) == true) {
+#else
+			if (bbox.crossed(*q_bbox) == true) {
+#endif
+				tri_list->push_back(*itr);
+#ifdef DEBUG
+				PL_DBGOSH << "TriMesh::linear_search:IN FALSE" << std::endl;
+#endif
+			}
+		}
+#ifdef DEBUG
+		for (int i=0; i<8; i++) {
+			PL_DBGOSH << "TriMesh::linear_search:q_box[" << i << "]:" 
+					  << q_bbox->getPoint(i) << std::endl;
+		}
+	    PL_DBGOSH << "TriMesh::linear_searc:" << " id:" << (*itr)->get_id()
+				  << ",v(" << vtx_arr << ")" << std::endl;
+#endif
+	}
+	return PLSTAT_OK;
+}
+
+// public /////////////////////////////////////////////////////////////////////
+template <typename T>
+const PrivateTriangle<T>* TriMesh<T>::search_nearest(
+	const Vec3<T>&    pos
+) const {
+	return m_vtree->search_nearest(pos);
+}
+
+// public /////////////////////////////////////////////////////////////////////
+template <typename T>
+POLYLIB_STAT TriMesh<T>::set_all_exid(
+	const int    id
+) const {
+	// 全ポリゴンのm_exidをidで上書き
+  typename std::vector<PrivateTriangle<T>*>::iterator itr;
+	for (itr = this->m_tri_list->begin(); itr != this->m_tri_list->end(); itr++) {
+		(*itr)->set_exid( id );
+	}
+	return PLSTAT_OK;
+}
+
+// private ////////////////////////////////////////////////////////////////////
+template <typename T>
+void TriMesh<T>::init_tri_list()
+{
+	if (this->m_tri_list == NULL) {
+		this->m_tri_list = new std::vector<PrivateTriangle<T>*>;
+	}
+	else {
+	  typename std::vector<PrivateTriangle<T>*>::iterator itr;
+		for (itr = this->m_tri_list->begin(); itr != this->m_tri_list->end(); itr++) {
+			delete *itr;
+		}
+		this->m_tri_list->clear();
+	}
+}
+
+
+
 
 } //namespace PolylibNS
 

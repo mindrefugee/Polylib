@@ -16,6 +16,7 @@
 #include <map>
 #include "common/PolylibStat.h"
 #include "common/PolylibCommon.h"
+#include "file_io/stl.h"
 
 namespace PolylibNS {
 
@@ -34,10 +35,11 @@ public:
 	///  @param[in]		fmap		ファイル名、ファイルフォーマットのセット。
 	///  @return	POLYLIB_STATで定義される値が返る。
 	///
+  template <typename T>
 	static POLYLIB_STAT load(
-		std::vector<PrivateTriangle*>				*tri_list,
+		std::vector<PrivateTriangle<T>*>	*tri_list,
 		const std::map<std::string, std::string>	&fmap,
-		float scale = 1.0
+		T scale = 1.0
 	);
 
 	///
@@ -48,8 +50,9 @@ public:
 	///  @param[in] fmt			ファイルフォーマット。
 	///  @return	POLYLIB_STATで定義される値が返る。
 	///
+  template <typename T>
 	static POLYLIB_STAT save(
-		std::vector<PrivateTriangle*>	*tri_list,
+		std::vector<PrivateTriangle<T>*>	*tri_list,
 		std::string						fname, 
 		std::string 					fmt = ""
 	);
@@ -75,6 +78,75 @@ public:
 	static const std::string FMT_STL_BB;	///< バイナリファイル
 	static const std::string DEFAULT_FMT;	///< TrimeshIO.cxxで定義している値
 };
+
+
+
+// public /////////////////////////////////////////////////////////////////////
+ template <typename T>
+POLYLIB_STAT TriMeshIO::load(
+     std::vector<PrivateTriangle<T>*>	*tri_list, 
+	const std::map<std::string, std::string>	&fmap,
+	T scale
+) {
+   typename std::map<std::string, std::string>::const_iterator	it;
+	int					total;
+	POLYLIB_STAT				ret = PLSTAT_OK;
+
+	if (tri_list == NULL) {
+		PL_ERROSH << "[ERROR]TriMeshIO::load():tri_list is NULL." << std::endl;
+		return PLSTAT_NG;
+	}
+
+	total = 0;	// 通算番号に初期値をセット
+	for (it = fmap.begin(); it != fmap.end(); it++) {
+	  std::string fname	= it->first;
+	  std::string fmt		= it->second;
+
+		if (fmt == "") {
+			PL_ERROSH << "[ERROR]:TTriMeshIO::load():Unknown stl format." << std::endl;
+			ret = PLSTAT_NG;
+		}
+		else if (fmt == FMT_STL_A || fmt == FMT_STL_AA) {
+			ret = stl_a_load(tri_list, fname, &total, scale);
+		}
+		else if (fmt == FMT_STL_B || fmt == FMT_STL_BB) {
+			ret = stl_b_load(tri_list, fname, &total, scale);
+		}
+
+		// 一ファイルでも読み込みに失敗したら戻る
+		if (ret != PLSTAT_OK)		return ret;
+	}
+
+	return ret;
+}
+
+// public /////////////////////////////////////////////////////////////////////
+ template <typename T>
+POLYLIB_STAT TriMeshIO::save(
+			     std::vector<PrivateTriangle<T>*>	*tri_list, 
+	std::string	fname, 
+	std::string	fmt
+) {
+#ifdef DEBUG
+  //  PL_DBGOS<<__FUNCTION__ << " saving stl file..."<<std::endl;
+#endif
+	if (tri_list == NULL) {
+		PL_ERROSH << "[ERROR]:TriMeshIO::save():tri_list is NULL." << std::endl;
+		return PLSTAT_NG;
+	}
+
+	if (fmt == FMT_STL_A || fmt == FMT_STL_AA) {
+		return stl_a_save(tri_list, fname);
+	}
+	else if (fmt == FMT_STL_B || fmt == FMT_STL_BB) {
+		return stl_b_save(tri_list, fname);
+	}
+	else{
+		return PLSTAT_UNKNOWN_STL_FORMAT;
+	}
+}
+
+
 
 } //namespace PolylibNS
 

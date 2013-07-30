@@ -23,8 +23,8 @@
 
 namespace PolylibNS {
 
-class Triangle;
-class PrivateTriangle;
+template <typename T> class Triangle;
+template <typename T> class PrivateTriangle;
 
 ////////////////////////////////////////////////////////////////////////////
 ///
@@ -32,6 +32,7 @@ class PrivateTriangle;
 /// 三角形ポリゴン集合を管理する純粋仮想クラスです。
 ///
 ////////////////////////////////////////////////////////////////////////////
+template <typename T>
 class Polygons {
 public:
 	///
@@ -46,12 +47,11 @@ public:
 
 	///
 	/// 引数で与えられる三角形ポリゴンリストの複製を設定する。
-	///
-	///  @param[in] trias 設定する三角形ポリゴンリスト。
-	///  @attention オーバーロードメソッドあり。
+	/// @param[in] trias 設定する三角形ポリゴンリスト。
+	/// @attention オーバーロードメソッドあり。
 	///
 	virtual void init(
-		const std::vector<PrivateTriangle*>	*trias
+		const std::vector<PrivateTriangle<T>*>	*trias
 	) = 0;
 
 	///
@@ -60,7 +60,7 @@ public:
 	///  @param[in] trias 設定する三角形ポリゴンリスト。
 	///
 	virtual void add(
-		const std::vector<PrivateTriangle*>		*trias
+		const std::vector<PrivateTriangle<T>*>		*trias
 	) = 0;
 
 	///
@@ -71,7 +71,7 @@ public:
 	///
 	virtual POLYLIB_STAT import(
 		const std::map<std::string, std::string>	fname,
-		float scale = 1.0
+		T scale = 1.0
 	) = 0;
 
 	///
@@ -98,8 +98,8 @@ public:
 	///  @attention MPIPolylib内でのみ利用するため、ユーザは使用しないで下さい。
 	///  @attention オーバーロードメソッドあり。
 	///
-	virtual const std::vector<PrivateTriangle*>* search(
-		BBox	*bbox, 
+	virtual const std::vector<PrivateTriangle<T>*>* search(
+	       BBox<T>	*bbox, 
 		bool	every
 	) const = 0;
 
@@ -114,9 +114,9 @@ public:
 	///  @attention オーバーロードメソッドあり。
 	///
 	virtual POLYLIB_STAT search(
-		BBox							*bbox, 
+		BBox<T>							*bbox, 
 		bool							every, 
-		std::vector<PrivateTriangle*>	*tri_list
+		std::vector<PrivateTriangle<T>*>	*tri_list
 	) const = 0;
 
 	///
@@ -129,8 +129,8 @@ public:
 	///  @attention MPIPolylib内でのみ利用するため、ユーザは使用しないで下さい。
 	///  @attention オーバーロードメソッドあり。
 	///
-	virtual const std::vector<PrivateTriangle*>* linear_search(
-		BBox	*bbox, 
+	virtual const std::vector<PrivateTriangle<T>*>* linear_search(
+		BBox<T>	*bbox, 
 		bool	every
 	) const = 0;
 
@@ -145,9 +145,9 @@ public:
 	///  @attention オーバーロードメソッドあり。
 	///
 	virtual POLYLIB_STAT linear_search(
-		BBox							*bbox, 
+		BBox<T>							*bbox, 
 		bool							every, 
-		std::vector<PrivateTriangle*>	*tri_list
+		std::vector<PrivateTriangle<T>*>	*tri_list
 	) const = 0;
 
 	///
@@ -156,8 +156,8 @@ public:
 	///  @param[in]     pos     指定位置
 	///  @return    検索されたポリゴン
 	///
-	virtual const PrivateTriangle* search_nearest(
-		const Vec3f&    pos
+	virtual const PrivateTriangle<T>* search_nearest(
+		const Vec3<T>&    pos
 	) const = 0;
 
 	///
@@ -177,7 +177,7 @@ public:
 	///
 	/// @return 三角形ポリゴンのリスト。
 	///
-	std::vector<PrivateTriangle*> *get_tri_list() const {
+	std::vector<PrivateTriangle<T>*> *get_tri_list() const {
 		return m_tri_list;
 	}
 
@@ -186,7 +186,7 @@ public:
 	///
 	/// @return KD木クラス。
 	///
-	virtual VTree *get_vtree() const = 0;
+	virtual VTree<T> *get_vtree() const = 0;
 
 private:
 	///
@@ -199,8 +199,16 @@ protected:
 	// クラス変数
 	//=======================================================================
 	/// 三角形ポリゴンのリスト。
-	std::vector<PrivateTriangle*>	*m_tri_list;
+	std::vector<PrivateTriangle<T>*>	*m_tri_list;
 };
+
+///
+/// デストラクタ
+///  @attention 継承しているクラスから呼び出されるために必要。
+///
+template <typename T>
+Polygons<T>::~Polygons() {}
+
 
 } //namespace PolylibNS
 

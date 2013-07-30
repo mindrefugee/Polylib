@@ -194,6 +194,7 @@ STRIP = @STRIP@
 TP_CFLAGS = @TP_CFLAGS@
 TP_DIR = @TP_DIR@
 TP_LDFLAGS = @TP_LDFLAGS@
+TP_MPI_LDFLAGS = @TP_MPI_LDFLAGS@
 VERSION = @VERSION@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@

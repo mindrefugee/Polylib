@@ -9,10 +9,14 @@
  *
  */
 
+
+#include <string.h>
+using namespace std;
+
 #include "CarGroup.h"
 
-POLYLIB_STAT CarGroup::build_group_tree(Polylib* polylib,
-					PolygonGroup* parent,
+POLYLIB_STAT CarGroup::build_group_tree(Polylib<PL_REAL>* polylib,
+					PolygonGroup<PL_REAL>* parent,
 					TextParser* tp)
 {
   TextParserError status = TP_NO_ERROR;
@@ -35,7 +39,7 @@ POLYLIB_STAT CarGroup::build_group_tree(Polylib* polylib,
 
   cout << whoami() <<" "<<__FUNCTION__<< " "<<  m_velocity << endl;
 
-  POLYLIB_STAT stat = PolygonGroup::build_group_tree(polylib,parent,tp);
+  POLYLIB_STAT stat = PolygonGroup<PL_REAL>::build_group_tree(polylib,parent,tp);
 
   return stat;
 }
@@ -68,5 +72,5 @@ POLYLIB_STAT CarGroup::mk_param_tag(
   ss>>value;
   tp->updateValue("velocity",value);
 
-  return PolygonGroup::mk_param_tag(tp,rank_no,extend,format);
+  return PolygonGroup<PL_REAL>::mk_param_tag(tp,rank_no,extend,format);
 }

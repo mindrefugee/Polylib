@@ -22,7 +22,9 @@
 using namespace std;
 using namespace PolylibNS;
 
-class CarGroup:public PolygonGroup{
+#define PL_REAL double
+
+class CarGroup:public PolygonGroup<PL_REAL>{
 
  public:
   static string get_class_name() {return "CarGroup";}
@@ -31,7 +33,7 @@ class CarGroup:public PolygonGroup{
  protected:
   double m_velocity;
   POLYLIB_STAT move(PolylibMoveParams& params);
-  POLYLIB_STAT build_group_tree(Polylib* polylib,PolygonGroup* parent,TextParser* tp);
+  POLYLIB_STAT build_group_tree(Polylib<PL_REAL>* polylib,PolygonGroup<PL_REAL>* parent,TextParser* tp);
 
 
   POLYLIB_STAT mk_param_tag(
