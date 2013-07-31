@@ -20,17 +20,14 @@
 using namespace std;
 using namespace PolylibNS;
 
-#define PL_REAL double
-
-template <typename T>
 struct MyParallelInfo {
-  T bpos[3]; //基準座標
+  float bpos[3]; //基準座標
   unsigned bbsize[3]; //number of voxel 計算領域
   unsigned gcsize[3]; //number of guidecell voxel
-  T dx[3]; //size of voxel
+  float dx[3]; //size of voxel
 };
 
-static MyParallelInfo<PL_REAL> myParaInfos[4] = {
+static MyParallelInfo myParaInfos[4] = {
   {{-1100, -1800,-1800,}, {18,18,18,}, {1, 1,1,}, {100,100,100} },
   {{-1100,     0,-1800,}, {18,18,18,}, {1, 1,1,}, {100,100,100} },
   {{-1100, -1800,    0,}, {18,18,18,}, {1, 1,1,}, {100,100,100} },
@@ -50,7 +47,7 @@ int main(int argc, char** argv ){
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);
   cout << "Starting program on rank:"<<rank<<endl;
 
-  MPIPolylib<PL_REAL>* p_polylib = MPIPolylib<PL_REAL>::get_instance();
+  MPIPolylib* p_polylib = MPIPolylib::get_instance();
 
   //  p_polylib->set_factory(new MyGroupFactory() );
 
@@ -62,15 +59,24 @@ int main(int argc, char** argv ){
 
   if(stat !=PLSTAT_OK) return -1;
 
+
+
+
+
+
   string  config_filename;
   if(rank ==0) {
-    config_filename = "polylib_config_0_20120822145243.tpp";
+    config_filename = "polylib_config_0_20130731174205.tpp";
+
   } else if(rank ==1) {
-    config_filename = "polylib_config_1_20120822145243.tpp";
+    config_filename = "polylib_config_1_20130731174205.tpp";
+
   } else if(rank ==2) {
-    config_filename = "polylib_config_2_20120822145243.tpp";
+    config_filename = "polylib_config_2_20130731174205.tpp";
+
   } else if(rank ==3) {
-    config_filename = "polylib_config_3_20120822145243.tpp";
+    config_filename = "polylib_config_3_20130731174205.tpp";
+
   } else {
     cerr << "ERROR! wrong rank "<<rank <<endl;
     return -1;

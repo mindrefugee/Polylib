@@ -889,7 +889,7 @@ POLYLIB_STAT VTree<T>::create(
 ) {
 #endif
 
-  std::cout<< "VTree create start" << std::endl;
+  //  std::cout<< "VTree create start" << std::endl;
 
 	destroy();
 
@@ -902,10 +902,10 @@ POLYLIB_STAT VTree<T>::create(
 		// make a new triangle
 		VElement<T>* elm = NULL;
 		elm = new VElement<T>(*itr);
-  std::cout<< "VTree create 1" << std::endl;
+		//std::cout<< "VTree create 1" << std::endl;
 		VNode<T>* vnode = NULL;
 		traverse(m_root, elm, &vnode);
-  std::cout<< "VTree create 2" << std::endl;
+		//std::cout<< "VTree create 2" << std::endl;
 		// the vtx didn't find in the tree
 		// add a new vertex
 		if (vnode == NULL) {
@@ -916,24 +916,25 @@ POLYLIB_STAT VTree<T>::create(
 
 		// find node to add a new triangle
 		vnode->set_element(elm);
-  std::cout<< "VTree create 4" << std::endl;
+		//std::cout<< "VTree create 4" << std::endl;
 		// set bbox for search triangle
 		vnode->set_bbox_search(elm);
-  std::cout<< "VTree create 5" << std::endl;
+		// std::cout<< "VTree create 5" << std::endl;
 		if (vnode->get_elements_num() > m_max_elements) {
 			vnode->split(m_max_elements);
 #ifdef DEBUG_VTREE
 			m_vnode.push_back(vnode->get_left());
 			m_vnode.push_back(vnode->get_right());
 #endif
-  std::cout<< "VTree create 6" << std::endl;
+			//  std::cout<< "VTree create 6" << std::endl;
+
 		}
 	}
 
 #ifdef USE_DEPTH
 	m_root->dump_depth(0);
 #endif
-  std::cout<< "VTree create end" << std::endl;
+	//  std::cout<< "VTree create end" << std::endl;
 	return PLSTAT_OK;
 }
 

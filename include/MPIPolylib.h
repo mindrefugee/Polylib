@@ -27,7 +27,14 @@
 #define MPITAG_TRIA_IDS				4
 #define MPITAG_TRIAS				5
 
+//#define PL_MPI_REAL MPI_DOUBLE
+
+#if PL_REAL==float
+#define PL_MPI_REAL MPI_FLOAT
+#else
 #define PL_MPI_REAL MPI_DOUBLE
+#endif
+
 
 namespace PolylibNS {
 ////////////////////////////////////////////////////////////////////////////
@@ -482,6 +489,10 @@ MPIPolylib<T>::init_parallel_info(
 		PL_ERROSH << "[ERROR]MPIPolylib::init_parallel_info():MPI_Allgather "
 				  << "faild." << std::endl;
 		return PLSTAT_MPI_ERROR;
+	} else {
+#ifdef DEBUG
+	  PL_DBGOSH << m_myrank << std::endl;
+#endif //DEBUG
 	}
 
 	// 受信データの展開

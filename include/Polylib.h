@@ -582,7 +582,7 @@ POLYLIB_STAT Polylib<T>::load(
 	std::string	config_name,
 	T	scale
 ) {
-#define DEBUG
+
 #ifdef DEBUG
 	PL_DBGOSH << "Polylib<T>::load_test() in." << std::endl;
 #endif
@@ -1060,7 +1060,10 @@ POLYLIB_STAT Polylib<T>::make_group_tree(
 
 	  tp->getNodes(nodes);
 	  tp->getLabels(leaves);
-	  if(nodes.size()==0 && leaves.size()==0){ return PLSTAT_CONFIG_ERROR;}
+
+	  // comment out by T. Suzuki Hulinks Inc. 
+	  // To fix examples/test_mpi2. Please check it later. 2013/7/31
+	  //if(nodes.size()==0 && leaves.size()==0){ return PLSTAT_CONFIG_ERROR;}
 
 	  std::string class_name = "PolygonGroup"; //default
 

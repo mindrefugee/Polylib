@@ -325,7 +325,7 @@ POLYLIB_STAT TriMesh<T>::build()
 		}
 	}
 	m_bbox = bbox;
-#define DEBUG
+
 #ifdef DEBUG
 	Vec3<T> min = m_bbox.getPoint(0);
 	Vec3<T> max = m_bbox.getPoint(7);

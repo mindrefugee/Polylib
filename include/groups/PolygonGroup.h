@@ -862,7 +862,7 @@ POLYLIB_STAT PolygonGroup<T>::build_polygon_tree()
 	bool	ret1, ret2;
 	ret1 = getrusage_sec(&ut1, &st1, &tt1);
 #endif
-#define DEBUG
+
 #ifdef DEBUG
 	PL_DBGOSH << "PolygonGroup::build_polygon_tree() in.:" << m_name << std::endl;
 #endif
@@ -897,7 +897,7 @@ POLYLIB_STAT PolygonGroup<T>::build_polygon_tree()
 template <typename T>
 POLYLIB_STAT PolygonGroup<T>::load_stl_file( T scale )
 {
-#define DEBUG
+
 #ifdef DEBUG
 PL_DBGOSH << "PolygonGroup:load_stl_file():IN" << std::endl;
 #endif

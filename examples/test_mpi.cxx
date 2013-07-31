@@ -20,7 +20,8 @@
 using namespace std;
 using namespace PolylibNS;
 
-#define PL_REAL double
+//#define PL_REAL double
+#define PL_REAL float
 template <typename T>
 struct MyParallelInfo {
   T bpos[3]; //基準座標

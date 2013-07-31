@@ -38,7 +38,7 @@
 //#include "c_lang/CMPIPolylib.h"
 #include "mpi.h"
 
-#define PL_MPI_REAL MPI_DOUBLE
+//#define PL_MPI_REAL MPI_DOUBLE
 #if PL_REAL==float
 #define PL_MPI_REAL MPI_FLOAT
 #else

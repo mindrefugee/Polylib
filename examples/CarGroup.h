@@ -22,7 +22,8 @@
 using namespace std;
 using namespace PolylibNS;
 
-#define PL_REAL double
+//#define PL_REAL double
+#define PL_REAL float
 
 class CarGroup:public PolygonGroup<PL_REAL>{
 

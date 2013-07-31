@@ -28,7 +28,8 @@ using namespace std;
 using namespace PolylibNS;
 
 //class PolygonGroup;
-#define PL_REAL double
+//#define PL_REAL double
+#define PL_REAL float 
 class MyGroupFactory:public PolygonGroupFactory<PL_REAL>{
  public:
  PolygonGroup<PL_REAL>* create_instance(std::string class_name){

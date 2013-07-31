@@ -63,7 +63,7 @@ POLYLIB_STAT CarGroup::mk_param_tag(
   stringstream ss;
   POLYLIB_STAT	stat;
   //goto root
-  tp->changeNode("/");
+  tp->changeNode("/Polylib");
   tp->changeNode(acq_fullpath());
   //this is test. change m_velocity forcely
   m_velocity = -500.;
