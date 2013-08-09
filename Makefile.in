@@ -319,6 +319,7 @@ EXTRA_DIST = polylib-config.in LICENSE Makefile_hand \
 
 dist_data_DATA = AUTHORS COPYING ChangeLog README LICENSE
 ACLOCAL_AMFLAGS = -I m4
+DISTCLEANFILES = *.tar.gz
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
@@ -799,6 +800,7 @@ clean-generic:
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
+	-test -z "$(DISTCLEANFILES)" || rm -f $(DISTCLEANFILES)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"

@@ -20,6 +20,8 @@ EXTRA_DIST     = polylib-config.in LICENSE Makefile_hand \
 dist_data_DATA = AUTHORS COPYING ChangeLog README LICENSE
 ACLOCAL_AMFLAGS = -I m4
 
+DISTCLEANFILES = *.tar.gz
+
 # to check libtool is upto date
 LIBTOOL_DEPS = @LIBTOOL_DEPS@
 libtool:$(LIBTOOL_DEPS)
