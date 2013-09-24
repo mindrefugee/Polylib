@@ -27,6 +27,7 @@
 #include "polygons/Triangle.h"
 #include "polygons/TriMesh.h"
 #include "polygons/VTree.h"
+#include "polygons/VertKDT.h"
 #include "common/PolylibCommon.h"
 #include "common/tt.h"
 #include "common/Vec3.h"

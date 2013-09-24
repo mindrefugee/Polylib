@@ -121,7 +121,8 @@ public:
 	static Vec3<T> zaxis() { return Vec3<T>(0, 0, 1); }
 
 	T lengthSquared() const { return t[0] * t[0] + t[1] * t[1] + t[2] *t [2]; }
-	T length() const { return sqrtf(lengthSquared()); }
+	//T length() const { return sqrtf(lengthSquared()); }
+	T length() const { return sqrt(lengthSquared()); }
 	Vec3<T>& normalize() {
 		T len = length();
 		if (len != 0)
@@ -136,7 +137,8 @@ public:
 		else
 			return *this;
 	}
-	T average() const { return (t[0] + t[1] + t[2])/3.f; }
+	//T average() const { return (t[0] + t[1] + t[2])/3.f; }
+	T average() const { return (t[0] + t[1] + t[2])/3.; }
 
 	T t[3];
 };

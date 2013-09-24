@@ -9,9 +9,5 @@
  *
  */
 
-
-#include <string.h>
-using namespace std;
-
-#include "CarGroup.h"
-
+#include "polygons/VertKDT.h"
+#include "polygons/VertexList.h"

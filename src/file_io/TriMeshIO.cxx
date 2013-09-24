@@ -23,6 +23,10 @@ const string TriMeshIO::FMT_STL_A  = "stl_a";
 const string TriMeshIO::FMT_STL_AA = "stl_aa";
 const string TriMeshIO::FMT_STL_B  = "stl_b";
 const string TriMeshIO::FMT_STL_BB = "stl_bb";
+const string TriMeshIO::FMT_OBJ_A  = "obj_a";
+const string TriMeshIO::FMT_OBJ_AA = "obj_aa";
+const string TriMeshIO::FMT_OBJ_B  = "obj_b";
+const string TriMeshIO::FMT_OBJ_BB = "obj_bb";
 const string TriMeshIO::DEFAULT_FMT = TriMeshIO::FMT_STL_B;
 
 /************************************************************************
@@ -98,19 +102,44 @@ string TriMeshIO::input_file_format(
 	const string &filename
 )
 {
+  
+
 	//書式の決定
 	char	*ext = stl_get_ext(filename);
+	//#define DEBUG
+#ifdef DEBUG
+	PL_DBGOS << __func__ << " file " << filename <<" ext " << ext <<std::endl;
+#endif
+	//#undef DEBUG
+
+
 	if (!strcmp(ext, "stla") || !strcmp(ext, "STLA")) {
 		 return FMT_STL_A;
 	}
 	else if (!strcmp(ext, "stlb") || !strcmp(ext, "STLB")) {
 		 return FMT_STL_B;
 	}
+
+	else if (!strcmp(ext, "obja") || !strcmp(ext, "OBJA")) {
+		 return FMT_STL_A;
+	}
+	else if (!strcmp(ext, "objb") || !strcmp(ext, "OBJB")) {
+		 return FMT_STL_B;
+	}
+
 	else if (!strcmp(ext, "stl") || !strcmp(ext, "STL")) {
 		//読み込んで書式を判定する
 		if(is_stl_a(filename) == true)	return FMT_STL_A;
-		else							return FMT_STL_B;
+		else	return FMT_STL_B;
 	}
+	else if (!strcmp(ext, "obj") || !strcmp(ext, "OBJ")) {
+		if(is_obj_a(filename) == true)	  return FMT_OBJ_A;
+		else	return FMT_OBJ_B;
+
+	}
+
+
+
 	return "";
 }
 

@@ -13,11 +13,14 @@
 #ifndef polylib_polygongroup_h
 #define polylib_polygongroup_h
 
-#include <map>
-#include <sstream>
+
+#include <iostream>
+#include <string>
 #include <iomanip>
 #include <algorithm>
-//#include <libxml/tree.h>
+#include <map>
+#include <sstream>
+
 #include "polygons/Triangle.h"
 #include "common/PolylibStat.h"
 #include "common/PolylibCommon.h"
@@ -51,6 +54,12 @@ public:
 	PolygonGroup();
 
 	///
+	/// コンストラクタ
+	///
+	/// @param[in] tolerance 頂点同一性チェックの基準値（距離）
+	PolygonGroup(T tolerance);
+
+	///
  	/// デストラクタ
 	///
 	virtual ~PolygonGroup();
@@ -68,6 +77,27 @@ public:
 		const std::vector<PrivateTriangle<T>*>		*tri_list, 
 		bool									clear = true
 	);
+
+
+	///
+	/// 引数で与えられる三角形ポリゴンリストを複製し、KD木の生成を行う。
+	///
+	///  @param[in] vertlist 設定する三角形ポリゴン頂点リスト。
+	///  @param[in] idlist 三角形のid。
+	///  @param[in] n_start_tri vertlistの頂点開始位置
+	///  @param[in] n_start_id idlistのid開始位置
+	///  @param[in] n_tri 加える三角形の数
+	///  @return	POLYLIB_STATで定義される値が返る。
+	///  @attention TriMeshクラスのinit()参照。オーバーロードメソッドあり。
+	
+	POLYLIB_STAT init(const T* vertlist,
+			  const int* idlist,
+			  const int n_start_tri,
+			  const int n_start_id,
+			  const unsigned int n_tri);
+
+
+
 
 	///
 	/// PolygonGroupツリーの作成。
@@ -113,21 +143,6 @@ public:
 
 	///
 	/// TriMeshクラスが管理しているポリゴン情報をSTLファイルに出力する。
-	///
-	///  @param[in] rank_no	ファイル名に付加するランク番号。
-	///  @param[in] extend	ファイル名に付加する自由文字列。
-	///  @param[in] format	STLファイルフォーマット。
-	///  @return	POLYLIB_STATで定義される値が返る。
-	///  @attention TriMeshIOクラスのsave()参照。オーバーロードメソッドあり。
-	///
-	POLYLIB_STAT save_stl_file(
-		std::string		rank_no,
-		std::string		extend,
-		std::string		format
-	);
-
-	///
-	/// TriMeshクラスが管理しているポリゴン情報をSTLファイルに出力する。
 	/// TextParser 対応版
 	///  @param[in] rank_no	ファイル名に付加するランク番号。
 	///  @param[in] extend	ファイル名に付加する自由文字列。
@@ -158,7 +173,7 @@ public:
 		ID_FORMAT		id_format
 	);
 
-
+	
 	///
 	/// 設定ファイルに出力するTextParserのリーフを編集する.
 	/// デフォルトでは何もしない。
@@ -294,8 +309,28 @@ public:
 	///  @attention	三角形IDが重複した三角形は追加しない。KD木の再構築はしない。
 	///
 	POLYLIB_STAT add_triangles(
-		std::vector<PrivateTriangle<T>*>	*tri_list
+	   std::vector<PrivateTriangle<T>*>	*tri_list
 	);
+
+
+
+	///
+	/// 三角形リストの追加。
+	///
+	///  @param[in] vertlist 設定する三角形ポリゴン頂点リスト。
+	///  @param[in] idlist 三角形のid。
+	///  @param[in] n_start_tri vertlistの頂点開始位置
+	///  @param[in] n_start_id idlistのid開始位置
+	///  @param[in] n_tri 加える三角形の数
+	///  @return	POLYLIB_STATで定義される値が返る。
+	///  @attention TriMeshクラスのadd()参照。オーバーロードメソッドあり。
+	POLYLIB_STAT add_triangles(	
+				   const T* vertlist,
+				   const int* idlist,
+				   const int n_start_tri,
+				   const int n_start_id,
+				   const unsigned int n_tri);
+	
 
 	///
 	/// ポリゴン情報を再構築する。（KD木の再構築をおこなう）
@@ -455,6 +490,23 @@ public:
 	}
 
 	///
+	/// Polygonクラスが管理する頂点リストを取得。
+	///
+	/// @return  頂点リスト
+	///
+	VertexList<T>* get_vertexlist() {
+		return m_polygons->get_vtx_list();
+	}
+
+	///
+	/// Polygonクラスが管理するKD木クラスを取得。
+	///
+	/// @return KD木ポリゴンリスト。
+	///
+	VertKDT<T> *get_vertkdt() {
+		return m_polygons->get_vertkdt();
+	}
+	///
 	/// Polygonクラスが管理する三角形ポリゴンリストを取得。
 	///
 	/// @return 三角形ポリゴンリスト。
@@ -528,13 +580,38 @@ public:
 	///
 	size_t get_num_of_trias_before_move() {
 		if (m_trias_before_move == NULL)	return 0;
-		else								return m_trias_before_move->size();
+		else	return m_trias_before_move->size();
+	}
+
+
+	///
+	/// test function for Vertex test
+	/// 
+	void print_vertex() const{
+	  m_polygons->print_vertex();
+	}
+
+	void show_bbox() const{
+	  BBox<T> bbox=m_polygons->get_bbox();
+	  Vec3<T> min=bbox.getPoint(0);
+	  Vec3<T> max=bbox.getPoint(7);
+	  std::cout<< __func__ << " min " <<min<<std::endl;
+	  std::cout<< __func__ << " max " <<max<<std::endl;
+
 	}
 
 	///
 	/// configファイルに記述するParamタグのクラス名(value="...")。
 	///
-	static const char *ATT_NAME_CLASS;
+	//	static const char *ATT_NAME_config;
+		static const char *ATT_NAME_CLASS;
+
+	///
+	/// 頂点同一性の基準値　configファイルに記述するParamタグ(value="...")。
+	///
+	static const char *ATT_NAME_TOLERANCE;
+
+
 
 protected:
 
@@ -603,6 +680,9 @@ protected:
 		Vec3<T> pos2
 	);
 
+
+
+
 private:
 	///
 	/// STLファイル名を作成。ファイル名は、以下の通り。
@@ -657,6 +737,7 @@ private:
 	///  @return	グループID。
 	///
 	int create_global_id();
+ 
 
 protected:
 	//=======================================================================
@@ -664,19 +745,19 @@ protected:
 	//=======================================================================
 	/// グループID。
 	// メンバー名修正( m_id -> m_internal_id) 2010.10.20
-	int								m_internal_id;
+	int					m_internal_id;
 
 	/// 自グループ名。
-	std::string						m_name;
+	std::string			m_name;
 
 	/// 親グループのパス名。
-	std::string							m_parent_path;
+	std::string			m_parent_path;
 
 	/// 親グループへのポインタ。
-	PolygonGroup<T>						*m_parent;
+	PolygonGroup<T>			*m_parent;
 
 	/// 子グループへのポインタリスト。
-	std::vector<PolygonGroup<T>*>			m_children;
+	std::vector<PolygonGroup<T>*>	m_children;
 
 	/// STLファイル名とファイル形式。
 	std::map<std::string, std::string>	m_file_name;
@@ -705,6 +786,9 @@ private:
 
 	/// ユーザ定義IDが設定されたか？：（追加 2013.06.17)
 	bool						m_id_defined;
+
+	///  頂点同一性チェックの判定基準 (追加 2013.09.03)
+	T m_tolerance;
 };
 
 
@@ -712,7 +796,10 @@ private:
 /// 他クラスでも使用するXMLタグ
 ///
 template <typename T>
-const char *PolygonGroup<T>::ATT_NAME_CLASS = "class_name";
+const char* PolygonGroup<T>::ATT_NAME_CLASS = "class_name";
+
+template <typename T>
+const char* PolygonGroup<T>::ATT_NAME_TOLERANCE = "tolerance";
 
 ///
 /// 本クラス内でのみ使用するXMLタグ
@@ -727,10 +814,7 @@ const char *PolygonGroup<T>::ATT_NAME_CLASS = "class_name";
 // ユーザ定義タイプ追加 2013.07.17
 #define ATT_NAME_TYPE		"type"
 
-
-
-
-
+ 
 // public /////////////////////////////////////////////////////////////////////
 template <typename T>
 PolygonGroup<T>::PolygonGroup() {
@@ -739,6 +823,16 @@ PolygonGroup<T>::PolygonGroup() {
 	m_movable	= false;
 	m_need_rebuild = false;
 	m_trias_before_move = NULL;
+}
+// public /////////////////////////////////////////////////////////////////////
+template <typename T>
+PolygonGroup<T>::PolygonGroup(T tolerance) {
+	m_parent	= 0;
+	m_polygons	= new TriMesh<T>(tolerance);
+	m_movable	= false;
+	m_need_rebuild = false;
+	m_trias_before_move = NULL;
+	m_tolerance=tolerance;
 }
 
 // public /////////////////////////////////////////////////////////////////////
@@ -756,20 +850,53 @@ PolygonGroup<T>::~PolygonGroup()
 		delete m_trias_before_move;
 	}
 }
+// public /////////////////////////////////////////////////////////////////////
+template <typename T>
+  POLYLIB_STAT PolygonGroup<T>::init(const T* vertlist,
+				     const int* idlist,
+				     const int n_start_tri,
+				     const int n_start_id,
+				     const unsigned int n_tri){
+
+  //#define DEBUG
+
+#ifdef DEBUG
+	PL_DBGOSH <<"PolygonGroup::" << __func__<<" start of Polygons::init." << std::endl;
+#endif
+
+  
+  m_polygons->init(vertlist,idlist,n_start_tri,n_start_id,n_tri);
+#ifdef DEBUG
+	PL_DBGOSH <<"PolygonGroup::" << __func__<<" end of Polygons::init."  <<std::endl;
+#endif
+
+  return build_polygon_tree();
+  //#undef DEBUG
+}
+
+
+
 
 // public /////////////////////////////////////////////////////////////////////
 template <typename T>
 POLYLIB_STAT PolygonGroup<T>::init(
 	const std::vector<PrivateTriangle<T>*>	*tri_list, 
-	bool							clear
+	bool clear
 ) {
+  //#define DEBUG
 #ifdef DEBUG
-	PL_DBGOSH <<"PolygonGroup::init3:clear=" << clear << std::endl;
+	PL_DBGOSH <<"PolygonGroup::init :clear=" << clear << std::endl;
 #endif
 	if (clear == true) {
 		m_polygons->init(tri_list);
+
+#ifdef DEBUG
+	PL_DBGOSH <<"PolygonGroup::init :back from TriMesh::init" <<  std::endl;
+#endif
+
 	}
 	return build_polygon_tree();
+	//#undef DEBUG
 }
 
 //TextParser version
@@ -834,8 +961,25 @@ POLYLIB_STAT PolygonGroup<T>::build_group_tree(
 	    error=tp->getValue((*leaf_iter),value);
 	    class_name=value;
 	  }
+
+	  T tolerance=m_tolerance;
+	  //TOLERANCE
+	  leaf_iter=find(leaves.begin(),
+			 leaves.end(),
+			 PolygonGroup<T>::ATT_NAME_TOLERANCE);
+	    
+	  if(leaf_iter != leaves.end()){
+	    //     class_name = *leaf_iter;
+	    std::string value;
+	    //TextPraserError  status=tp->getValue((*leaf_iter),value);
+	    tp->getValue((*leaf_iter),value);
+	    int ierror;
+	    tolerance=tp->convertDouble(value,&ierror);
+	  }
+
+
 	  PolygonGroup* pg;
-	  pg = polylib->create_polygon_group(class_name);
+	  pg = polylib->create_polygon_group(class_name,tolerance);
 	  polylib->add_pg_list(pg);	
 	  if (pg == NULL) {
 	    PL_ERROSH << "[ERROR]PolygonGroup::build_group_tree():"
@@ -863,12 +1007,18 @@ POLYLIB_STAT PolygonGroup<T>::build_polygon_tree()
 	ret1 = getrusage_sec(&ut1, &st1, &tt1);
 #endif
 
+	//#define DEBUG
 #ifdef DEBUG
 	PL_DBGOSH << "PolygonGroup::build_polygon_tree() in.:" << m_name << std::endl;
 #endif
 
 	//木構造の生成
 	POLYLIB_STAT ret = m_polygons->build();
+#ifdef DEBUG
+	PL_DBGOSH << "PolygonGroup::build_polygon_tree() out."<< ret << std::endl;
+#endif
+
+
 	if (ret != PLSTAT_OK) return ret;
 
 #ifdef DEBUG
@@ -889,7 +1039,7 @@ POLYLIB_STAT PolygonGroup<T>::build_polygon_tree()
 		cerr.unsetf(ios::scientific);
 	}
 #endif
-
+	//#undef DEBUG
 	return PLSTAT_OK;
 }
 
@@ -897,11 +1047,16 @@ POLYLIB_STAT PolygonGroup<T>::build_polygon_tree()
 template <typename T>
 POLYLIB_STAT PolygonGroup<T>::load_stl_file( T scale )
 {
-
+  //#define DEBUG
 #ifdef DEBUG
 PL_DBGOSH << "PolygonGroup:load_stl_file():IN" << std::endl;
 #endif
 	POLYLIB_STAT ret = m_polygons->import(m_file_name, scale);
+
+#ifdef DEBUG
+PL_DBGOSH << "PolygonGroup:load_stl_file():import finished" << std::endl;
+#endif
+
 	if (ret != PLSTAT_OK) return ret;
 
 	// m_idが指定されていたら、その値で全三角形のm_exidを更新
@@ -910,8 +1065,17 @@ PL_DBGOSH << "PolygonGroup:load_stl_file():IN" << std::endl;
 		ret = m_polygons->set_all_exid( m_id );
 	}
 	if (ret != PLSTAT_OK) return ret;
+	
+	POLYLIB_STAT result= build_polygon_tree();
 
-	return build_polygon_tree();
+
+#ifdef DEBUG
+PL_DBGOSH << "PolygonGroup:load_stl_file():import build_finished" << std::endl;
+	m_polygons->print_memory_size();
+#endif
+
+	return result;
+	//#undef DEBUG
 }
 
 // public /////////////////////////////////////////////////////////////////////
@@ -946,19 +1110,6 @@ PL_DBGOSH << "load_id_file:" << fname.c_str() << std::endl;
  return load_id(m_polygons->get_tri_list(), fname, id_format);
 }
 
-// public /////////////////////////////////////////////////////////////////////
-template <typename T>
-POLYLIB_STAT PolygonGroup<T>::save_stl_file(
-	std::string	rank_no,
-	std::string	extend,
-	std::string	format
-) {
-	char	*fname = mk_stl_fname(rank_no, extend, format);
-	return TriMeshIO::save<T>(m_polygons->get_tri_list(), fname, format);
-}
-
-
-
 // TextParser でのsaveの為、save した stl ファイルを記憶しておく
 /////////////////////////////////////////////////////////////////////
 template <typename T>
@@ -969,9 +1120,12 @@ POLYLIB_STAT PolygonGroup<T>::save_stl_file(
 	std::map<std::string,std::string>& stl_fname_map
 ) {
   char	*fname = mk_stl_fname(rank_no, extend, format,stl_fname_map);
-	return TriMeshIO::save(m_polygons->get_tri_list(), fname, format);
+  //	return TriMeshIO::save(m_polygons->get_tri_list(), fname, format);
+  return TriMeshIO::save<T>( m_polygons->get_vtx_list(),
+			   m_polygons->get_tri_list(),
+			   fname, format);
 }
-
+ 
 // public /////////////////////////////////////////////////////////////////////
 template <typename T>
 POLYLIB_STAT PolygonGroup<T>::save_id_file(
@@ -1114,6 +1268,29 @@ PL_DBGOSH << "p_trias ret num:" << p_trias->size() << std::endl;
 #endif
 	return p_trias;
 }
+// public /////////////////////////////////////////////////////////////////////
+template <typename T>
+POLYLIB_STAT
+PolygonGroup<T>::add_triangles(
+				   const T* vertlist,
+				   const int* idlist,
+				   const int n_start_tri,
+				   const int n_start_id,
+				   const unsigned int n_tri){
+
+  if( n_tri==0)	  return PLSTAT_OK;
+
+	m_polygons->add(vertlist, idlist, n_start_tri, n_start_id,n_tri);
+
+
+	// KD木要再構築フラグを立てる
+	m_need_rebuild = true;
+
+	return PLSTAT_OK;
+}
+
+
+
 
 // public /////////////////////////////////////////////////////////////////////
 template <typename T>
@@ -1215,11 +1392,21 @@ POLYLIB_STAT PolygonGroup<T>::show_group_info(
 	PL_DBGOSH << "  vertex vector list: " << std::endl;
 	typename std::vector<PrivateTriangle<T>*>::iterator it;
 	for (it = tmp_list->begin(); it != tmp_list->end(); it++) {
-		Vec3<T> *vtx = (*it)->get_vertex();
-		for (int i=0; i<3; i++) {
-			PL_DBGOSH << "    id:" << i		   << " x:" << vtx[i][0] 
-				 << " y:"	  << vtx[i][1] << " z:" << vtx[i][2] << std::endl;
-		}
+	  //Vec3<T>* vtx[3] = (*it)->get_vertex();
+	  Vertex<T>** vtx = (*it)->get_vertex();
+	  for (int i=0; i<3; i++) {
+	    //	    PL_DBGOSH << "    id:" << i		   << " x:" << (*vtx)[i][0]
+	    //<< " y:"	  << (*vtx)[i][1] << " z:" << (*vtx)[i][2] << std::endl;
+	    PL_DBGOSH << "    id:" << i		   << " x:" << (*(vtx[i]))[0]
+		      << " y:"	  << (*(vtx[i]))[1] << " z:" << (*(vtx[i]))[2] << std::endl;
+
+	  }
+
+		// Vec3<T> *vtx = (*it)->get_vertex();
+		// for (int i=0; i<3; i++) {
+		//   PL_DBGOSH << "    id:" << i		   << " x:" << vtx[i][0]
+		// 	    << " y:"	  << vtx[i][1] << " z:" << vtx[i][2] << std::endl;
+		// }
 	}
 
 	PL_DBGOSH << "  normal vector list: " << std::endl;
@@ -1268,18 +1455,37 @@ POLYLIB_STAT PolygonGroup<T>::rescale_polygons( T scale )
 	std::vector<PrivateTriangle<T>*>* tmp_list = m_polygons->get_tri_list();
 	typename std::vector<PrivateTriangle<T>*>::iterator it;
 	for (it = tmp_list->begin(); it != tmp_list->end(); it++) {
-		Vec3<T>* org = (*it)->get_vertex();
-		Vec3<T>  scaled[3];
-		scaled[0][0] = org[0][0] * scale;
-		scaled[0][1] = org[0][1] * scale;
-		scaled[0][2] = org[0][2] * scale;
-		scaled[1][0] = org[1][0] * scale;
-		scaled[1][1] = org[1][1] * scale;
-		scaled[1][2] = org[1][2] * scale;
-		scaled[2][0] = org[2][0] * scale;
-		scaled[2][1] = org[2][1] * scale;
-		scaled[2][2] = org[2][2] * scale;
-		(*it)->set_vertexes( scaled, true, true );
+
+	  Vertex<T>** original = (*it)->get_vertex();
+	  Vec3<T> org[3];
+	  org[0]=*(original[0]);
+	  org[1]=*(original[1]);
+	  org[2]=*(original[2]);
+
+	  Vec3<T>  scaled[3];
+	  scaled[0][0] = org[0][0] * scale;
+	  scaled[0][1] = org[0][1] * scale;
+	  scaled[0][2] = org[0][2] * scale;
+	  scaled[1][0] = org[1][0] * scale;
+	  scaled[1][1] = org[1][1] * scale;
+	  scaled[1][2] = org[1][2] * scale;
+	  scaled[2][0] = org[2][0] * scale;
+	  scaled[2][1] = org[2][1] * scale;
+	  scaled[2][2] = org[2][2] * scale;
+	  (*it)->set_vertexes( scaled, true, true );
+
+	  // Vec3<T>* org = (*it)->get_vertex();
+	  // Vec3<T>  scaled[3];
+	  // scaled[0][0] = org[0][0] * scale;
+	  // scaled[0][1] = org[0][1] * scale;
+	  // scaled[0][2] = org[0][2] * scale;
+	  // scaled[1][0] = org[1][0] * scale;
+	  // scaled[1][1] = org[1][1] * scale;
+	  // scaled[1][2] = org[1][2] * scale;
+	  // scaled[2][0] = org[2][0] * scale;
+	  // scaled[2][1] = org[2][1] * scale;
+	  // scaled[2][2] = org[2][2] * scale;
+	  // (*it)->set_vertexes( scaled, true, true );
 	}
 	m_need_rebuild = true;
 	return rebuild_polygons();
@@ -1311,7 +1517,7 @@ POLYLIB_STAT PolygonGroup<T>::setup_attribute (
 	TextParser* tp
 ) {
 #ifdef DEBUG
-  PL_DBGOS << __FUNCTION__ << " in"  <<std::endl;
+  PL_DBGOS << __func__ << " in"  <<std::endl;
 #endif
   TextParserError tp_error = TP_NO_ERROR;
   int ierror;
@@ -1326,13 +1532,13 @@ POLYLIB_STAT PolygonGroup<T>::setup_attribute (
   //  class_name search first
   std::vector<std::string>::iterator leaf_iter = find(leaves.begin(),leaves.end(),ATT_NAME_CLASS);
 
-  //  PL_DBGOS << __FUNCTION__ << " # of nodes: " << nodes.size()
+  //  PL_DBGOS << __func__ << " # of nodes: " << nodes.size()
   //<< " # of leaves: " << leaves.size() << std::endl;
 
   std::string class_name = "";
   if(leaf_iter!=leaves.end()) {
     tp_error=tp->getValue((*leaf_iter),class_name);
-    //PL_DBGOS << __FUNCTION__ << " there is a class_name "<< class_name<<std::endl;
+    //PL_DBGOS << __func__ << " there is a class_name "<< class_name<<std::endl;
   }
 
   // id 
@@ -1341,7 +1547,7 @@ POLYLIB_STAT PolygonGroup<T>::setup_attribute (
 
   if(leaf_iter!=leaves.end()) {
     tp_error=tp->getValue((*leaf_iter),id_string);
-    //PL_DBGOS << __FUNCTION__ << " there is a id number. "<< id_string
+    //PL_DBGOS << __func__ << " there is a id number. "<< id_string
     //<<std::endl;
   }
 
@@ -1351,7 +1557,7 @@ POLYLIB_STAT PolygonGroup<T>::setup_attribute (
 
   if(leaf_iter!=leaves.end()) {
     tp_error=tp->getValue((*leaf_iter),label_string);
-    //PL_DBGOS << __FUNCTION__ << " there is a label. "<< label_string
+    //PL_DBGOS << __func__ << " there is a label. "<< label_string
     //<<std::endl;
   }
 
@@ -1361,7 +1567,7 @@ POLYLIB_STAT PolygonGroup<T>::setup_attribute (
 
   if(leaf_iter!=leaves.end()) {
     tp_error=tp->getValue((*leaf_iter),type_string);
-    //PL_DBGOS << __FUNCTION__ << " there is a type. "<< type_string
+    //PL_DBGOS << __func__ << " there is a type. "<< type_string
     //<<std::endl;
   }
 
@@ -1377,7 +1583,7 @@ POLYLIB_STAT PolygonGroup<T>::setup_attribute (
       tp_error=tp->getValue((*leaf_iter),movable_string);
 
       m_movable = tp->convertBool(movable_string,&ierror);		
-      //PL_DBGOS << __FUNCTION__ << " is movavle ? true or false  "
+      //PL_DBGOS << __func__ << " is movavle ? true or false  "
       //<< m_movable <<std::endl;
     }
   }
@@ -1387,7 +1593,7 @@ POLYLIB_STAT PolygonGroup<T>::setup_attribute (
   std::string current_node;
   tp->currentNode(current_node);
 
-  //cout << __FUNCTION__ << " current_node = "  << current_node <<std::endl;
+  //cout << __func__ << " current_node = "  << current_node <<std::endl;
   std::string pg_name = current_node;
 
   std::string	parent_path = "";
@@ -1410,7 +1616,7 @@ POLYLIB_STAT PolygonGroup<T>::setup_attribute (
       ss << tmpstring <<"["<<index<<"]";
       ss >> tmpstring;
 #ifdef DEBUG      
-      PL_DBGOS << __FUNCTION__<< " multi stl files "<< tmpstring << " "<<*leaf_iter<<std::endl;
+      PL_DBGOS << __func__<< " multi stl files "<< tmpstring << " "<<*leaf_iter<<std::endl;
 #endif //DEBUG      
 
       leaf_iter = find(leaf_iter,leaves.end(),tmpstring);
@@ -1418,7 +1624,7 @@ POLYLIB_STAT PolygonGroup<T>::setup_attribute (
       tp_error=tp->getValue((*leaf_iter),fname);
 
 #ifdef DEBUG      
-      PL_DBGOS << __FUNCTION__ << " STLfiles " << index <<" " << fname <<std::endl;
+      PL_DBGOS << __func__ << " STLfiles " << index <<" " << fname <<std::endl;
 #endif //DEBUG      
 
       std::string format = TriMeshIO::input_file_format(fname);
@@ -1439,7 +1645,7 @@ POLYLIB_STAT PolygonGroup<T>::setup_attribute (
 	tp_error=tp->getValue((*leaf_iter),fname);
 
 #ifdef DEBUG
-	PL_DBGOS << __FUNCTION__ << " STLfile "  << fname <<std::endl;
+	PL_DBGOS << __func__ << " STLfile "  << fname <<std::endl;
 #endif // DEBUG
 	std::string format = TriMeshIO::input_file_format(fname);
 	if (format.empty()) {
@@ -1534,14 +1740,13 @@ PolygonGroup<T>::check_leaped(
 			if( is_far( origin, cell_size, p_trias->at(i)->get_vertex()[j],
 						m_trias_before_move->at(i)->get_vertex()[j]        ) ) {
 				PL_ERROSH << "[ERROR]PolygonGroup::check_leaped():Leaped Vertex"
-						  << " Detected. GroupID:" << m_internal_id
-						  << " TriaID:" << p_trias->at(i)->get_id()
-						  << " before:(" << m_trias_before_move->at(i)->get_vertex()[j]
-						  << ") after:(" << p_trias->at(i)->get_vertex()[j]
-						  << ")" << std::endl;
+					  << " Detected. GroupID:" << m_internal_id
+					  << " TriaID:" << p_trias->at(i)->get_id()
+					  << " before:(" << m_trias_before_move->at(i)->get_vertex()[j]
+					  << ") after:(" << p_trias->at(i)->get_vertex()[j]
+					  << ")" << std::endl;
 			}
 		}
-		
 		// 移動前三角形インスタンスはもう不要なので削除
 		delete m_trias_before_move->at(i);
 	}
@@ -1602,19 +1807,29 @@ char *PolygonGroup<T>::mk_stl_fname(
 	// グループ名のフルパスを取得して、/を_に置き換え
 	strcpy(fname1, acq_fullpath().c_str());
 
-	//cout << __FUNCTION__ << " acq_fullpath() " <<acq_fullpath()<<std::endl;
+	//cout << __func__ << " acq_fullpath() " <<acq_fullpath()<<std::endl;
 	
 	for (int i = 0; i < (int)strlen(fname1); i++) {
 		if (fname1[i] == '/')	fname1[i] = '_';
 	}
 #ifdef DEBUG
-	PL_DBGOS << __FUNCTION__ << " fname1 " <<fname1<<std::endl;
+	PL_DBGOS << __func__ << " fname1 " <<fname1<<std::endl;
 #endif //  DEBUG
 	if (format == TriMeshIO::FMT_STL_A || format == TriMeshIO::FMT_STL_AA) {
-		prefix = "stla";
+	  //		prefix = "stla";
+	  		prefix = "stl";
 	}
+	else if (format == TriMeshIO::FMT_OBJ_A || format == TriMeshIO::FMT_OBJ_AA) {
+	  //		prefix = "stla";
+	  		prefix = "obj";
+	}
+	else if (format == TriMeshIO::FMT_OBJ_B || format == TriMeshIO::FMT_OBJ_BB) {
+	  //		prefix = "stla";
+	  		prefix = "obj";
+	}
+
 	else {
-		prefix = "stlb";
+		prefix = "stl";
 	}
 
 	if (rank_no == "") {
@@ -1624,10 +1839,16 @@ char *PolygonGroup<T>::mk_stl_fname(
 		sprintf(fname2, "%s_%s_%s.%s", fname1, rank_no.c_str(), extend.c_str(), 
 																prefix.c_str());
 	}
+	//#define DEBUG
+#ifdef DEBUG
+	PL_DBGOS << __func__ << " prefix " <<prefix<<std::endl;
+#endif //  DEBUG
+	//#undef DEBUG
 
 #ifdef DEBUG
-	PL_DBGOS << __FUNCTION__ << " fname2 " <<fname2<<std::endl;
+	PL_DBGOS << __func__ << " fname2 " <<fname2<<std::endl;
 #endif //DEBUG
+
 	return fname2;
 }
 
@@ -1648,19 +1869,26 @@ char *PolygonGroup<T>::mk_stl_fname(
 
 	
 
-	//cout << __FUNCTION__ << " acq_fullpath() " <<acq_fullpath()<<std::endl;
+	//cout << __func__ << " acq_fullpath() " <<acq_fullpath()<<std::endl;
 	
 	for (int i = 0; i < (int)strlen(fname1); i++) {
 		if (fname1[i] == '/')	fname1[i] = '_';
 	}
 
-	//cout << __FUNCTION__ << " fname1 " <<fname1<<std::endl;
+	//cout << __func__ << " fname1 " <<fname1<<std::endl;
 
 	if (format == TriMeshIO::FMT_STL_A || format == TriMeshIO::FMT_STL_AA) {
-		prefix = "stla";
+	  		prefix = "stl";
 	}
+	else if (format == TriMeshIO::FMT_OBJ_A || format == TriMeshIO::FMT_OBJ_AA) {
+	  		prefix = "obj";
+	}
+	else if (format == TriMeshIO::FMT_OBJ_B || format == TriMeshIO::FMT_OBJ_BB) {
+	  		prefix = "obj";
+	}
+
 	else {
-		prefix = "stlb";
+		prefix = "stl";
 	}
 
 	if (rank_no == "") {
@@ -1671,8 +1899,17 @@ char *PolygonGroup<T>::mk_stl_fname(
 																prefix.c_str());
 	}
 
-	//cout << __FUNCTION__ << " fname2 " <<fname2<<std::endl;
 
+	//#define DEBUG
+#ifdef DEBUG
+	PL_DBGOS << __func__ << " prefix " <<prefix<<std::endl;
+#endif //  DEBUG
+
+
+#ifdef DEBUG
+	PL_DBGOS << __func__ << " fname2 " <<fname2<<std::endl;
+#endif //  DEBUG
+	//#undef DEBUG
 	std::string tmp_fname = fname2;
 	stl_fname_map.insert(std::map<std::string,std::string>::value_type(acq_fullpath(),tmp_fname));
 

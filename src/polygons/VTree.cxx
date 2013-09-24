@@ -33,10 +33,9 @@ namespace PolylibNS {
 
 using namespace std;
 
-// #ifdef DEBUG_VTREE
-// template <typename T>
-//   static vector<VNode<T>*> m_vnode;
-// #endif
+#ifdef DEBUG_VTREE
+  //static std::vector<VNode<double>*> m_vnode;
+#endif
 
 /************************************************************************
  *  

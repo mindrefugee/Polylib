@@ -8,10 +8,4 @@
  * All rights reserved.
  *
  */
-
-
-#include <string.h>
-using namespace std;
-
-#include "CarGroup.h"
-
+#include "polygons/Vertex.h"

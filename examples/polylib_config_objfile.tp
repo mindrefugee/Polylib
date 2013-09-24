@@ -1,0 +1,8 @@
+Polylib{
+	cube{
+	//filepath="cube.obj"
+	filepath="Polylib_data/happy.obj"
+	//filepath="Polylib_data/xyzrgb_statuette.stl"
+	//	filepath="sphere.stl"
+	}
+} // end of Polylib

@@ -1,0 +1,9 @@
+Polylib {
+	tolerance=1.0e-12
+	tmp{
+	 sphere{
+	 	 	filepath="Polylib_data/xyzrgb_statuette.stl"
+	 //			filepath="Polylib_data/happy.obj"
+                }		
+         }
+} // end of Polylib

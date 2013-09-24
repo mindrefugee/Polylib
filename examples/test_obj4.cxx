@@ -15,8 +15,8 @@
 using namespace std;
 using namespace PolylibNS;
 
-//#define PL_REAL double
-#define PL_REAL float
+#define PL_REAL double
+//#define PL_REAL float
 int main(){
 
   cout<< "test 0" << endl;
@@ -29,22 +29,23 @@ int main(){
   //  pl_instance->load();
 
   PL_REAL scale=1.0;
-  std::string file="polylib_config.tp";
-  cout<< "test 1 - 1" << endl;
+  std::string file="polylib_config_objfile_bin.tp";
+
   pl_instance->load(file,scale);
 
   cout<< "test 2" << endl;
 
   pl_instance->show_group_hierarchy();
-
+ 
   cout<< "test 3" << endl;
 
-  //  pl_instance->show_group_info("car"); // not working??
+
+  // //  pl_instance->show_group_info("car"); // not working??
   string fname="";
-  string stl="stl_a";
+  string obj="obj_a";
   string extend="";
 
-  pl_instance->save(&fname,stl,extend);
+  pl_instance->save(&fname,obj,extend);
 
   cout<< "test 4" << endl;
 

@@ -20,8 +20,8 @@
 using namespace std;
 using namespace PolylibNS;
 
-//#define PL_REAL double
-#define PL_REAL float
+#define PL_REAL double
+//#define PL_REAL float
 
 template <typename T>
 struct MyParallelInfo {
@@ -50,7 +50,7 @@ int main(int argc, char** argv ){
 
   MPIPolylib<PL_REAL>* p_polylib = MPIPolylib<PL_REAL>::get_instance();
 
-  p_polylib->set_factory(new MyGroupFactory() );
+  p_polylib->set_factory(new MyGroupFactory<PL_REAL>() );
 
   stat = p_polylib->init_parallel_info(MPI_COMM_WORLD,
 				       myParaInfos[rank].bpos,
@@ -60,7 +60,7 @@ int main(int argc, char** argv ){
 
   if(stat !=PLSTAT_OK) return -1;
 
-  stat=p_polylib->load_rank0("./polylib_config2.tpp");
+  stat=p_polylib->load_rank0("./polylib_config2.tp");
   if(stat !=PLSTAT_OK) return -1;
   cout << "data loading finished on rank:"<<rank<<endl;
   p_polylib->show_group_hierarchy();

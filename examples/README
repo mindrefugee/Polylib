@@ -31,3 +31,23 @@ $make clean
 
 $make distclean
 
+
+
+その他のプログラム
+test_mpi_xyzrgb* 
+並列度の違いによる時間測定用プログラムです。
+
+test_cube
+cubeファイルアスキーを読み込むプログラムです。
+出力はOBJ_BIN(法線なし)
+test_cube2
+cubeファイルアスキーを読み込むプログラムです。
+出力はOBJ_BIN(法線あり)
+test_cube3
+cubeファイルアスキーを読み込むプログラムです。
+出力はOBJアスキー
+test_cube4
+cubeファイルバイナリを読み込むプログラムです。
+出力はOBJアスキー
+
+

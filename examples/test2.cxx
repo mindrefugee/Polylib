@@ -21,7 +21,7 @@ int main(){
   Polylib<PL_REAL>* pl_instance = Polylib<PL_REAL>::get_instance();
 
   //  pl_instance->load();
-  pl_instance->load("polylib_config-multi.tpp");
+  pl_instance->load("polylib_config-multi.tp");
   pl_instance->show_group_hierarchy();
   //  pl_instance->show_group_info("car"); // not working??
   string fname="";
