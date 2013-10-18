@@ -27,6 +27,8 @@ const string TriMeshIO::FMT_OBJ_A  = "obj_a";
 const string TriMeshIO::FMT_OBJ_AA = "obj_aa";
 const string TriMeshIO::FMT_OBJ_B  = "obj_b";
 const string TriMeshIO::FMT_OBJ_BB = "obj_bb";
+const string TriMeshIO::FMT_VTK_A  = "vtk_a";
+const string TriMeshIO::FMT_VTK_B  = "vtk_b";
 const string TriMeshIO::DEFAULT_FMT = TriMeshIO::FMT_STL_B;
 
 /************************************************************************

@@ -18,6 +18,7 @@
 #include "polygons/Polygons.h"
 #include "polygons/TriMesh.h"
 #include "polygons/Triangle.h"
+#include "polygons/DVertexTriangle.h"
 #include "groups/PolygonGroup.h"
 #include "groups/PolygonGroupFactory.h"
 #include "common/PolylibStat.h"
@@ -28,7 +29,7 @@
 #include "TextParser.h"
 #include "Version.h"
 
-#define TIME_MEASURE
+//#define TIME_MEASURE
 #ifdef TIME_MEASURE
 #include <stdio.h>
 #include <time.h>
@@ -64,6 +65,8 @@ struct CalcAreaInfo {
 
   /// ガイドセルを含めたBounding Box
   BBox<T> m_gcell_bbox;
+
+
 };
 
 ////////////////////////////////////////////////////////////////////////////
@@ -300,6 +303,43 @@ public:
   }
   
 
+  ///
+  /// 与えられた名前のポリゴングループにDVertexクラスを持つポリゴンを格納する
+  /// 際の、スカラーデータとベクトルデータの数を指定する。
+  /// 指定された名前のポリゴングループが存在しない場合は、
+  /// 指定された階層にポリゴングループを新規に作成する。
+  /// DTは、データの型である。
+  /// 
+  /// @param[in] group_name ポリゴングループの名称
+  /// @param[in] nscalar スカラーデータ数
+  /// @param[in] nvector ベクトルデータ数
+
+
+  void make_DVertex_PolygonGroup(std::string group_name,
+				 int nscalar,
+				 int nvector);
+
+
+
+  /// 新規にDVertexを持つ三角形ポリゴンを追加する。
+  ///
+  /// @param[in] name ポリゴンを追加するポリゴングループの名称。 
+  /// @param[in] v   ポリゴンの各頂点　0〜2
+  ///
+  /// @return 作成したポリゴンへのポインタ。
+  DVertexTriangle<T>* 
+    add_DVertex_Triangle(std::string name,
+			 Vec3<T>* v);
+
+
+
+	/// 新規にDVertexを登録した場合に、不要頂点の削除を行う。
+	///
+	/// @param[in] name ポリゴングループ名称
+	void finalize_DVertex(std::string name);
+
+
+
 protected:
 	///
 	/// コンストラクタ
@@ -404,6 +444,17 @@ protected:
 	POLYLIB_STAT setfilepath( std::map<std::string,std::string>& stl_fname_map);
 
 
+	/// map  
+	///
+	///　
+	///　
+	///　
+	///
+	/// @param[in] stl_fname_map saveしたSTLファイルとその階層のmap型データ
+	/// @return	POLYLIB_STATで定義される値が返る。
+
+	void create_tp_structure( std::map<std::string,std::string>& stl_fname_map);
+
 	///
 	/// 設定ファイルの保存。 PolylibConfig 内部にあったものをここへ。
 	//  暫定措置
@@ -470,6 +521,9 @@ protected:
 	PolygonGroup<T>* get_group(
 		int	internal_id
 	) const;
+
+
+
 
 private:
 	///
@@ -659,23 +713,42 @@ POLYLIB_STAT Polylib<T>::save(
 	if (stat != PLSTAT_OK) return stat;
 
 	stat = (*it)->mk_param_tag(tp, "", "", "");
+#ifdef DEBUG
+	PL_DBGOSH << __FUNCTION__ << " make_param_tag called "<< my_extend << std::endl;
+#endif
+
+
 	if (stat != PLSTAT_OK) return stat;
 
 	}
 
 
+	// before clearpath // 暫定措置
+	if(stl_format=="vtk_a"|| stl_format=="vtk_b")	{
+	  //create_tp_structure(stl_fname_map);
+	} else {
+
+
+
 	// update stl filepath 
 	// clear file path first
 	stat=clearfilepath(tp);
+
+#ifdef DEBUG
+	PL_DBGOSH << __FUNCTION__ << " clearfilepath called "<< my_extend << std::endl;
+#endif
+
+
 	//tp->write("tmp2.tpp");
 	// set filepath
+
 	stat=setfilepath(stl_fname_map);
 
 #ifdef DEBUG
 	PL_DBGOSH << __FUNCTION__ << " setfilepath called"<<  std::endl;
 #endif
 
-
+	}
 	//	std::string tmp_extend = my_extend;
 	//	char	*config_name = save_config_file("", tmp_extend, stl_format);
 
@@ -812,6 +885,9 @@ void Polylib<T>::show_group_hierarchy(FILE	*fp)
 	std::string		tab;
 	typename std::vector<PolygonGroup<T>*>::iterator	it;
 	for (it = m_pg_list.begin(); it != m_pg_list.end(); it++) {
+#ifdef DEBUG
+	  PL_DBGOSH << "Polylib::show_group_hierarchy() "<< (*it) << std::endl;
+#endif
 		if ((*it)->get_parent() != NULL) {
 			// Not Use
 		}
@@ -1125,7 +1201,6 @@ POLYLIB_STAT Polylib<T>::make_group_tree(
 
 	} 
 	
-
 	return PLSTAT_OK;
 }
 
@@ -1264,7 +1339,9 @@ char* Polylib<T>::polylib_config_save_file(
 #define POLYLIB_CONFIG_NAME		"polylib_config"  
 #define POLYLIB_CONFIG_EXT		"tp"
 
+#ifdef DEBUG
   std::cout <<__FUNCTION__<<" in "<< rank_no <<" "<< extend << std::endl;
+#endif
 
   static char fname[1024];
   if (rank_no == ""){
@@ -1279,8 +1356,9 @@ char* Polylib<T>::polylib_config_save_file(
 
   tp->write(fname_string,1);
 
-
+#ifdef DEBUG
   std::cout <<__FUNCTION__<<" end "<< fname << std::endl;
+#endif
   return fname;
 
 }
@@ -1378,6 +1456,7 @@ POLYLIB_STAT Polylib<T>::save_with_rankno(
 template <typename T>
 POLYLIB_STAT Polylib<T>::setfilepath(std::map<std::string,std::string>& stl_fname_map){
 
+#define DEBUG
 #ifdef DEBUG
   PL_DBGOS << "stl_map size " <<  stl_fname_map.size()<<std::endl;
 #endif //DEBUG
@@ -1386,12 +1465,17 @@ POLYLIB_STAT Polylib<T>::setfilepath(std::map<std::string,std::string>& stl_fnam
   for(std::map<std::string,std::string>::iterator map_iter=stl_fname_map.begin();
       map_iter != stl_fname_map.end();
       map_iter++){
+    
 #ifdef DEBUG
     PL_DBGOS << "stl_map " <<  map_iter->first <<" "<< map_iter->second<<std::endl;
 #endif // DEBUG
+
+
     tp->changeNode(map_iter->first); //
     std::string cur;
     tp->currentNode(cur);
+
+
     
     //    cout << __FUNCTION__ << " " <<  cur << std::endl;
     std::string value = "\"" + map_iter->second + "\"";
@@ -1415,7 +1499,9 @@ POLYLIB_STAT Polylib<T>::setfilepath(std::map<std::string,std::string>& stl_fnam
     tp->changeNode("/Polylib");
   }
   return PLSTAT_OK;
+#undef DEBUG
 }
+
 /////////////////////////////////////////　　
 // 追加　２０１２ー０８
 //////////////////////////////////
@@ -1471,8 +1557,26 @@ POLYLIB_STAT Polylib<T>::clearfilepath(TextParser* tp_ptr){
   return PLSTAT_OK;
 
 }
+template <typename T>
+void Polylib<T>::create_tp_structure(std::map<std::string,std::string> &stl_fname_map){
+
+    tp->changeNode("/Polylib"); //
+  for(std::map<std::string,std::string>::iterator map_iter=stl_fname_map.begin();
+      map_iter != stl_fname_map.end();
+      map_iter++){
+    
+#ifdef DEBUG
+    PL_DBGOS << "stl_map " <<  map_iter->first <<" "<< map_iter->second<<std::endl;
+#endif // DEBUG
+
+    std::string a=map_iter->first+"/filepath";
+    std::string b="\""+map_iter->second+"\"";
+    tp->createLeaf(a,b);
+
+  }
 
 
+}
 
 // protected //////////////////////////////////////////////////////////////////
 // 2010.10.20 引数FILE *追加。
@@ -1491,7 +1595,8 @@ void Polylib<T>::show_group_name(
 		if (pg->get_parent_path().empty() == true)  PL_DBGOS << "+";
 		PL_DBGOS << pg->get_name() << ":" << pg->acq_file_name() << ":"
 				 << pg->get_id() << ":" << pg->get_label() << ":"
-				 << pg->get_type() << std::endl;
+			 << pg->get_type()  <<std::endl;
+
 		//pg->show_bbox();
 		// to print vertex for checking read file.
 		//if(pg->acq_file_name()!="") pg->print_vertex();
@@ -1638,6 +1743,172 @@ void Polylib<T>::search_group(
 }
 
 
+
+// public/////
+template <typename T>
+void Polylib<T>::make_DVertex_PolygonGroup(
+			      std::string group_name,
+			      int nscalar,
+			      int nvector){
+
+  //#define DEBUG
+#ifdef DEBUG
+  PL_DBGOSH << "Polylib::"<< __func__ <<" in." << std::endl;
+#endif
+  
+  std::string parent_name=group_name;
+  std::string daughter_name;
+  //  std::string::size_type index=daughter_name.find("/");  
+  std::string::size_type index=parent_name.rfind("/");  
+  std::vector<std::string> path_list;
+
+  //path_list.push_back(daughter_name);
+  path_list.push_back(parent_name);
+  //PL_DBGOSH << "list "<<daughter_name <<std::endl;
+#ifdef DEBUG
+  PL_DBGOSH << "list "<<parent_name << " "<< index <<std::endl;
+#endif
+  while( index !=std::string::npos){
+    daughter_name=parent_name.substr(index+1);
+    parent_name=parent_name.substr(0,index);
+    path_list.push_back(parent_name);
+    //    PL_DBGOSH << "list "<<parent_name << " "<< path_list.size() <<std::endl;
+    index=parent_name.find("/");  
+  }
+
+  //  PL_DBGOSH << "list check"<<std::endl;
+
+  for(int i=0;i<path_list.size();++i){
+    //    PL_DBGOSH << "list check"<<std::endl;
+    PolygonGroup<T>* pg_instance = get_group(path_list[i]);
+    // if(pg_instance==NULL)   PL_DBGOSH << "We do not have ";
+    // else   PL_DBGOSH << "We have ";
+    // PL_DBGOSH<< path_list[i]<<std::endl;
+  }
+
+  PolygonGroup<T>* pg_instance;
+  PolygonGroup<T>* parent=NULL;
+  int i=0;
+  while( i<path_list.size() ){
+    pg_instance=get_group(path_list[i]);
+#ifdef DEBUG
+    PL_DBGOSH << "while "<<i<<" "<<pg_instance <<std::endl;
+#endif
+    if(pg_instance!=NULL) break;
+    i++;
+  }
+  
+
+  if(i<path_list.size()){
+    parent = pg_instance;
+    parent_name=path_list[i];
+    daughter_name= group_name;
+    index = group_name.find_first_not_of(parent_name);
+    if(index!=std::string::npos){
+      daughter_name= group_name.substr(index+1);
+    }
+
+    PL_DBGOSH << "list check "<< parent_name<< " "<<daughter_name<< " "<<index<<std::endl;
+
+  } else {
+
+  }
+
+  //PolygonGroup<T>* pg_instance = get_group(group_name);
+  //  PolygonGroup<T>* pg_instance = get_group(path_list[i]);
+
+  pg_instance = get_group(group_name);
+
+  std::string class_name="PolygonGroup";
+  
+  if(pg_instance==NULL){
+#ifdef DEBUG
+    PL_DBGOSH << "Polylib::"<< __func__ <<" polygon group " 
+	      << group_name << " is not found."<< std::endl;
+#endif
+    pg_instance=
+      m_factory->create_instance(class_name,
+				 this->m_distance_tolerance);
+    add_pg_list(pg_instance);
+
+    if (pg_instance == NULL) {
+      PL_ERROSH << "[ERROR]Polylib::"<< __func__ <<" Class name not found."
+		<< class_name
+		<< std::endl;
+      //return PLSTAT_CONFIG_ERROR;
+    }
+
+
+    if(parent ==NULL){
+      pg_instance->build_group_tree(this, parent, group_name);
+    }    else {
+      pg_instance->build_group_tree(this, parent, daughter_name);
+    }
+    //get right pointer again
+    pg_instance = get_group(group_name);
+    pg_instance->prepare_DVertex(nscalar,nvector);
+#ifdef DEBUG
+      PL_DBGOSH << "Polylib::"<< __func__ 
+		<<" gp  " << group_name <<" end " <<get_group(group_name)<<std::endl;
+#endif
+      
+    
+  } else {
+#ifdef DEBUG
+    PL_DBGOSH << "Polylib::"<< __func__ <<" polygon group " 
+	      << group_name << " is found."<< std::endl;
+#endif
+    pg_instance->replace_DVertex(nscalar,nvector);
+
+
+
+  }
+  
+
+  //#undef DEBUG
+}
+
+////////////////////////////////////////////////
+
+template <typename T> DVertexTriangle<T>* 
+Polylib<T>::add_DVertex_Triangle(std::string name,
+			       Vec3<T>* v){
+
+  //#define DEBUG
+#ifdef DEBUG
+  PL_DBGOSH << "Polylib::"<< __func__ <<" in." << std::endl;
+#endif
+
+
+  DVertexTriangle<T>* ret=0;
+  PolygonGroup<T>* pg_instance = get_group(name);
+
+#ifdef DEBUG
+  PL_DBGOSH << "Polylib::"<< __func__ <<" name "<<name <<" "<<pg_instance << std::endl;
+#endif
+
+  if( pg_instance!=NULL)  ret = pg_instance->add_DVertex_Triangle(v);
+  
+#ifdef DEBUG
+  PL_DBGOSH << "Polylib::"<< __func__ 
+	    <<" v0 "<<v[0]
+	    <<" v1 "<<v[1]
+	    <<" v2 "<<v[2]
+	    <<" "<<pg_instance << std::endl;
+#endif
+
+
+  return ret;
+  //#undef DEBUG
+}
+
+
+template <typename T> 
+void Polylib<T>::finalize_DVertex(std::string name){
+  PolygonGroup<T>* pg_instance = get_group(name);
+  pg_instance->finalize_DVertex();
+
+}
 
 
 } //namespace PolylibNS

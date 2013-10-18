@@ -58,6 +58,20 @@ namespace PolylibNS{
 #endif
 
   public:
+    VertexList(T tolerance){
+      m_vkdt = NULL;
+      m_tolerance = tolerance;
+      m_tolerance_2=m_tolerance*m_tolerance;
+      m_bbox.init();
+      m_vertex_list= new std::vector<Vertex<T>*>;
+      m_num_map=NULL;
+
+#ifdef  VertexListDEBUG
+      m_pointer_count.clear();
+#endif
+    }
+
+
 
     /// コンストラクタ
     ///
@@ -217,9 +231,9 @@ namespace PolylibNS{
       m_bbox.init();
     }
     /// コンストラクタ　基準値
-    VertexList(T tol):m_tolerance(tol){
-      m_bbox.init();
-    }
+    // VertexList(T tol):m_tolerance(tol){
+    //   m_bbox.init();
+    // }
     /// 基準値の取得
     T get_tolerance(){return m_tolerance;}
 
@@ -246,6 +260,7 @@ namespace PolylibNS{
   };
 
   template <typename T> void VertexList<T>::vtx_add_nocheck(Vertex<T>* v){
+
 #ifdef  VertexListDEBUG
     if(m_pointer_count.count(v)==0){
       PL_DBGOSH << "VertexList<T>::"<<__func__ << " new pointer " << v <<std::endl;    
@@ -256,8 +271,19 @@ namespace PolylibNS{
     }
 #endif
 
-    m_vertex_list->push_back(v);
-    m_bbox.add(*v);
+    //PL_DBGOSH << "VertexList<T>::"<<__func__ << " new pointer " << v <<std::endl;    
+
+    m_bbox.add( *v);
+
+    // PL_DBGOSH << "VertexList<T>::"<<__func__ << " new pointer " 
+    // 	      << (*v)[0]<< " "
+    // 	      << (*v)[1]<< " "
+    // 	      << (*v)[2]<< " "
+    // 	      <<std::endl;    
+    m_vertex_list->push_back( v);
+    //    PL_DBGOSH << "VertexList<T>::"<<__func__ << " new pointer " << v <<std::endl;    
+
+
   }
 
 

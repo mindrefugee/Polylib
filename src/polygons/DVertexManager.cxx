@@ -8,10 +8,4 @@
  * All rights reserved.
  *
  */
-
-#include "MyGroupFactory.h"
-
-//PolygonGroup* MyGroupFactory::create_instance(std::string class_name){
- 
-
-//}
+#include "polygons/DVertexManager.h"

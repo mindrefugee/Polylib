@@ -11,7 +11,7 @@
 ##############################################################################
 
 if SERIALTARGET
-  noinst_PROGRAMS = test test2 test_vtx test_vtx_float test_obj test_xyzrgb_statuette_stl test_obj2 test_obj3 test_obj4 test_read
+  noinst_PROGRAMS = test test2 test_vtx test_vtx_float test_obj test_xyzrgb_statuette_stl test_obj2 test_obj3 test_obj4 test_read test_DVertex
 else
   noinst_PROGRAMS = test_mpi test_mpi2 test_mpi3 test_mpi_xyzrgb1 test_mpi_xyzrgb2 test_mpi_xyzrgb4 test_mpi_xyzrgb8
 endif
@@ -65,6 +65,9 @@ test_read_CXXFLAGS = -I$(top_builddir)/include @TP_CFLAGS@
 
 test_vtx_float_SOURCES  = test_vtx_float.cxx
 test_vtx_float_CXXFLAGS = -I$(top_builddir)/include @TP_CFLAGS@
+
+test_DVertex_SOURCES = test_DVertex.cxx
+test_DVertex_CXXFLAGS = -I$(top_builddir)/include @TP_CFLAGS@
 
 
 test_xyzrgb_statuette_stl_SOURCES  = test_xyzrgb_statuette_stl.cxx
@@ -150,6 +153,12 @@ test_read_LDADD = \
     @TP_LDFLAGS@ -lstdc++
 
 test_vtx_float_LDADD = \
+    -L$(top_builddir)/src/.libs -lPOLY \
+    @MPI_LDFLAGS@ \
+    @MPI_LIBS@ \
+    @TP_LDFLAGS@ -lstdc++
+
+test_DVertex_LDADD = \
     -L$(top_builddir)/src/.libs -lPOLY \
     @MPI_LDFLAGS@ \
     @MPI_LIBS@ \

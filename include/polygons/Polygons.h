@@ -17,8 +17,10 @@
 #include <iomanip>
 #include "polygons/VTree.h"
 #include "polygons/Vertex.h"
+#include "polygons/DVertex.h"
 #include "polygons/VertexList.h"
 #include "polygons/Triangle.h"
+#include "polygons/DVertexTriangle.h"
 #include "common/tt.h"
 #include "common/axis.h"
 #include "common/Vec3.h"
@@ -207,6 +209,58 @@ template <typename T> class PrivateTriangle;
 				     const int id
 				     ) const = 0;
 
+   /// Vertex -> DVertex  へのリプレース
+   ///
+   /// @param[in] nscalar スカラーデータ数
+   /// @param[in] nvector ベクトルデータ数
+
+   virtual POLYLIB_STAT replace_DVertex(int nscalar,int nvector){
+     return PLSTAT_OK;
+   };
+
+   /// Vertex -> DVertex  への準備
+   ///
+   /// @param[in] nscalar スカラーデータ数
+   /// @param[in] nvector ベクトルデータ数
+
+   virtual POLYLIB_STAT prepare_DVertex(int nscalar,int nvector){
+     return PLSTAT_OK;
+   };
+
+	//
+	/// DVertex 追加作成用
+	/// 
+	/// @param[in] v 頂点座標（３点）
+	///  @return    polygonへのpointer
+	///
+
+   virtual DVertexTriangle<T>* add_DVertex_Triangle(Vec3<T>* v){
+
+#define DEBUG
+#ifdef DEBUG
+  PL_DBGOSH << "Polygons::"<< __func__
+ 	    <<" v0 "<<v[0]
+	    <<" v1 "<<v[1]
+	    <<" v2 "<<v[2]
+	    << std::endl;
+#endif
+
+     return NULL;
+   }
+
+   	//
+	/// DVertex 追加作成後の重複頂点削除
+	/// 
+	///
+  
+   virtual void finalize_DVertex(){
+     //do nothing?
+   }
+
+
+
+
+
    //=======================================================================
    // Setter/Getter
    //=======================================================================
@@ -275,6 +329,12 @@ template <typename T> class PrivateTriangle;
    ///
    virtual BBox<T> get_bbox() const=0;
 
+    ///
+    /// hasDVertex
+    ///
+    /// @return DVertex を持っているか
+    ///
+   virtual bool hasDVertex() const =0;
 
  private:
    ///
@@ -291,6 +351,7 @@ template <typename T> class PrivateTriangle;
    //	std::vector<Vertex<T>*>	*m_vtx_list;
    VertexList<T>	*m_vertex_list;
    T tolerance;
+  
  };
 
 ///

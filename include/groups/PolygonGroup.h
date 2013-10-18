@@ -26,6 +26,7 @@
 #include "common/PolylibCommon.h"
 #include "TextParser.h"
 #include "polygons/TriMesh.h"
+#include "polygons/DVertexManager.h"
 #include "file_io/TriMeshIO.h"
 #include "file_io/triangle_id.h"
 
@@ -97,9 +98,7 @@ public:
 			  const unsigned int n_tri);
 
 
-
-
-	///
+	//
 	/// PolygonGroupツリーの作成。
 	/// 設定ファイルの内容を再帰的に呼び出し、PolygonGroupツリーを作成する。
 	///
@@ -113,6 +112,66 @@ public:
 		PolygonGroup<T>			*parent,
 		TextParser* tp
 	);
+
+
+
+	//
+	/// PolygonGroupツリーの作成。DVertex 新規作成用
+	/// name で表されたパスにポリゴンツリーを再帰的に作成する。
+	/// 
+	///
+	///  @param[in] polylib Polygonクラスのインスタンス
+	///  @param[in] parent	親グループ
+	///  @param[in] path    作成するパス。作成するごとに上位のパスを消して再帰する。
+
+	///  @return	POLYLIB_STATで定義される値が返る。
+	///
+
+  //  template<typename DT>
+  virtual POLYLIB_STAT build_group_tree(Polylib<T> *polylib,
+				PolygonGroup<T>	*parent,
+				 std::string path
+				);
+
+
+	//
+	/// DVertex 追加作成用
+	/// 
+	/// @param[in] nscalar スカラーデータ数
+	/// @param[in] nvector ベクターデータ数
+	///  @return	POLYLIB_STATで定義される値が返る。
+	///
+
+  POLYLIB_STAT replace_DVertex(int nscalar,int nvector);
+
+	//
+	/// DVertex 追加作成用
+	/// 
+	/// @param[in] nscalar スカラーデータ数
+	/// @param[in] nvector ベクターデータ数
+	///  @return	POLYLIB_STATで定義される値が返る。
+	///
+
+  POLYLIB_STAT prepare_DVertex(int nscalar,int nvector);
+
+	//
+	/// DVertex 追加作成用
+	/// 
+	/// @param[in] v 頂点座標（３点）
+	///  @return	polygonへのpointer
+	///
+
+  DVertexTriangle<T>* add_DVertex_Triangle(Vec3<T>* v);
+
+
+	//
+	/// DVertex 追加作成後の重複頂点削除
+	/// KD木の構築
+	///
+  
+  void finalize_DVertex();
+
+
 
 	///
 	/// 三角形ポリゴンの法線ベクトルの計算、面積の計算、KD木の生成を行う。
@@ -380,7 +439,7 @@ public:
 	/// @attention	本クラスを継承する場合、継承後のクラス名を返すように変更す
 	/// 			ることる。
 	///
-	static std::string get_class_name() {return "PolygonGroup";};
+	static std::string get_class_name() {return "PolygonGroup";}
 
 	///
 	/// クラス名を取得。
@@ -388,7 +447,7 @@ public:
 	/// @return		クラス名。
 	/// @attention	継承するクラスのクラス名取得関数get_class_name()を呼び出す。
 	///
-	virtual std::string whoami()		{return get_class_name();};
+	virtual std::string whoami()		{return get_class_name();}
 
 	///
 	/// STLファイル名とファイルフォーマットを設定。
@@ -714,7 +773,7 @@ private:
 	char *mk_stl_fname(
 		std::string		rank_no,
 		std::string		extend,
-		std::string		format,
+		std::string		*format,
 		std::map<std::string,std::string>& stl_fname_map
 	);
 
@@ -789,6 +848,9 @@ private:
 
 	///  頂点同一性チェックの判定基準 (追加 2013.09.03)
 	T m_tolerance;
+
+  //	DVertexManager* m_DVM_ptr;
+ 
 };
 
 
@@ -823,6 +885,7 @@ PolygonGroup<T>::PolygonGroup() {
 	m_movable	= false;
 	m_need_rebuild = false;
 	m_trias_before_move = NULL;
+	///	m_DVM_ptr=NULL;
 }
 // public /////////////////////////////////////////////////////////////////////
 template <typename T>
@@ -833,6 +896,7 @@ PolygonGroup<T>::PolygonGroup(T tolerance) {
 	m_need_rebuild = false;
 	m_trias_before_move = NULL;
 	m_tolerance=tolerance;
+	//	m_DVM_ptr=NULL;
 }
 
 // public /////////////////////////////////////////////////////////////////////
@@ -849,6 +913,10 @@ PolygonGroup<T>::~PolygonGroup()
 		}
 		delete m_trias_before_move;
 	}
+
+	// if(m_DVM_ptr!=NULL){
+	//   delete m_DVM_ptr;
+	// }
 }
 // public /////////////////////////////////////////////////////////////////////
 template <typename T>
@@ -903,8 +971,8 @@ POLYLIB_STAT PolygonGroup<T>::init(
 // public /////////////////////////////////////////////////////////////////////
 template <typename T>
 POLYLIB_STAT PolygonGroup<T>::build_group_tree(
-	Polylib<T>					*polylib,
-	PolygonGroup			*parent,
+	Polylib<T> *polylib,
+	PolygonGroup<T> *parent,
 	TextParser* tp
 ) {
 #ifdef DEBUG
@@ -913,7 +981,7 @@ POLYLIB_STAT PolygonGroup<T>::build_group_tree(
 
 	//current で出来ているPolygonGroupに属性をつける。
 	POLYLIB_STAT 	ret = setup_attribute(polylib, parent, tp);
-	if (ret != PLSTAT_OK)		return ret;
+	if (ret != PLSTAT_OK) return ret;
 
 	// 元コードの説明
 	// PolylibCfgElem がなくなるまでループ
@@ -996,6 +1064,84 @@ POLYLIB_STAT PolygonGroup<T>::build_group_tree(
 
 	return PLSTAT_OK;
 }
+
+//TextParser version
+// public /////////////////////////////////////////////////////////////////////
+/////// 新規 DVertex 追加用
+
+  template <typename T>
+  //  template <typename DT>
+  POLYLIB_STAT PolygonGroup<T>::build_group_tree(
+						 Polylib<T> *polylib,
+						 PolygonGroup<T>* parent,
+						 std::string path
+						 ) {
+    //#define DEBUG
+#ifdef DEBUG
+    PL_DBGOSH << "PolygonGroup::build_group_tree() in. " << path << std::endl;
+#endif
+    //	DT tmp;
+
+    std::string::size_type index=path.find("/");
+    std::string parent_name;
+    std::string daughter_name;
+
+    if(index!=std::string::npos){ 
+      //  "/" found 
+      parent_name=path.substr(0,index);
+      daughter_name=path.substr(index+1);
+#ifdef DEBUG
+      PL_DBGOSH << "Polylib::"<< __func__ 
+		<<" parent " << parent_name
+		<<" daughter " << daughter_name<<std::endl;
+#endif
+      m_name = parent_name;
+      m_internal_id = create_global_id();
+
+      if (parent != NULL){
+	m_parent = parent;
+	m_parent_path = parent->acq_fullpath();
+	parent->add_children(this);
+      } else {
+#ifdef DEBUG
+	PL_DBGOSH << "root "<<parent_name<< " id "<<this <<std::endl;;
+#endif
+      }
+
+      PolygonGroup<T>* pg;
+      std::string class_name="PolygonGroup";
+      pg = polylib->create_polygon_group(class_name,m_tolerance);
+      polylib->add_pg_list(pg);	
+
+      return pg->build_group_tree(polylib,this,daughter_name);
+
+    } else {
+      //  "/" not found 
+
+      
+
+#ifdef DEBUG
+      PL_DBGOSH << "PolygonGroup::build_group_tree() last. " << path << std::endl;
+      PL_DBGOSH << " ptr "<<this <<std::endl;;
+#endif
+
+
+      if (parent != NULL){
+	m_parent = parent;
+	m_parent_path = parent->acq_fullpath();
+	parent->add_children(this);
+      }
+
+      m_name = path;
+      m_internal_id = create_global_id();
+
+      return PLSTAT_OK;
+    }
+
+    //#undef DEBUG
+
+ }
+
 
 // public /////////////////////////////////////////////////////////////////////
 template <typename T>
@@ -1091,7 +1237,7 @@ POLYLIB_STAT PolygonGroup<T>::load_id_file(
   if(m_file_name.size() == 0 ){
     return PLSTAT_OK;	
   }
-
+  
 	// IDはsave_id()関数で一括して出力されるので、ファイル数は必ず1個
 
 	if (m_file_name.size() != 1) {
@@ -1119,8 +1265,12 @@ POLYLIB_STAT PolygonGroup<T>::save_stl_file(
 	std::string	format,
 	std::map<std::string,std::string>& stl_fname_map
 ) {
-  char	*fname = mk_stl_fname(rank_no, extend, format,stl_fname_map);
+  
+  char	*fname = mk_stl_fname(rank_no, extend, &format,stl_fname_map);
+  //  std::cout <<__func__ <<format << std::endl;
+
   //	return TriMeshIO::save(m_polygons->get_tri_list(), fname, format);
+  
   return TriMeshIO::save<T>( m_polygons->get_vtx_list(),
 			   m_polygons->get_tri_list(),
 			   fname, format);
@@ -1513,9 +1663,10 @@ const PrivateTriangle<T>* PolygonGroup<T>::search_nearest(
 template <typename T>
 POLYLIB_STAT PolygonGroup<T>::setup_attribute (
 	Polylib<T>					*polylib,
-	PolygonGroup			*parent, 
+	PolygonGroup<T>			*parent, 
 	TextParser* tp
 ) {
+#define DEBUG
 #ifdef DEBUG
   PL_DBGOS << __func__ << " in"  <<std::endl;
 #endif
@@ -1664,12 +1815,14 @@ POLYLIB_STAT PolygonGroup<T>::setup_attribute (
 	  m_parent		= parent;
 	  m_parent_path	= parent->acq_fullpath();
 	  parent->add_children(this);
+	} else {
+	  PL_DBGOSH << "parent is root."<<pg_name<<std::endl;
 	}
 
 	// その他の属性を設定
 	// for tp
 	m_name = pg_name;
-
+	
 	m_internal_id = create_global_id();
 
 	// ユーザ定義ID追加 2010.10.20
@@ -1690,7 +1843,7 @@ POLYLIB_STAT PolygonGroup<T>::setup_attribute (
 	m_type = type_string;
 
 	return PLSTAT_OK;
-
+#undef DEBUG
 }
 
 // protected //////////////////////////////////////////////////////////////////
@@ -1812,6 +1965,7 @@ char *PolygonGroup<T>::mk_stl_fname(
 	for (int i = 0; i < (int)strlen(fname1); i++) {
 		if (fname1[i] == '/')	fname1[i] = '_';
 	}
+
 #ifdef DEBUG
 	PL_DBGOS << __func__ << " fname1 " <<fname1<<std::endl;
 #endif //  DEBUG
@@ -1857,7 +2011,7 @@ template <typename T>
 char *PolygonGroup<T>::mk_stl_fname(
 	std::string		rank_no,
 	std::string		extend,
-	std::string		format,
+	std::string		*format,
 	std::map<std::string,std::string>& stl_fname_map
 ) {
 	char		fname1[1024];
@@ -1866,6 +2020,10 @@ char *PolygonGroup<T>::mk_stl_fname(
 
 	// グループ名のフルパスを取得して、/を_に置き換え
 	strcpy(fname1, acq_fullpath().c_str());
+
+	// std::cout <<__func__ <<"else" <<TriMeshIO::FMT_VTK_A <<" "<<*format 
+	// 	    << " " << ( TriMeshIO::FMT_VTK_A == *format) 
+	// 	    <<std::endl;
 
 	
 
@@ -1877,17 +2035,33 @@ char *PolygonGroup<T>::mk_stl_fname(
 
 	//cout << __func__ << " fname1 " <<fname1<<std::endl;
 
-	if (format == TriMeshIO::FMT_STL_A || format == TriMeshIO::FMT_STL_AA) {
+	if (*format == TriMeshIO::FMT_STL_A || *format == TriMeshIO::FMT_STL_AA) {
 	  		prefix = "stl";
 	}
-	else if (format == TriMeshIO::FMT_OBJ_A || format == TriMeshIO::FMT_OBJ_AA) {
+	else if (*format == TriMeshIO::FMT_OBJ_A || *format == TriMeshIO::FMT_OBJ_AA) {
 	  		prefix = "obj";
 	}
-	else if (format == TriMeshIO::FMT_OBJ_B || format == TriMeshIO::FMT_OBJ_BB) {
+	else if (*format == TriMeshIO::FMT_OBJ_B || *format == TriMeshIO::FMT_OBJ_BB) {
 	  		prefix = "obj";
 	}
 
+	else if (*format == TriMeshIO::FMT_VTK_A || *format == TriMeshIO::FMT_VTK_B) {
+	  //	  std::cout <<__func__ <<"vtk"<<std::endl;
+	  prefix = "vtk";
+	  // //if(m_polygons->hasDVertex()){
+	  // 		prefix = "vtk";
+	  // } else {
+	  //   *format=TriMeshIO::FMT_STL_A;
+	  //   prefix = "stl";
+	  // }
+
+	}
+
+
 	else {
+	  /* std::cout <<__func__ <<"else|" <<TriMeshIO::FMT_VTK_A <<" "<<*format  */
+	  /* 	    << " " << ( TriMeshIO::FMT_VTK_A == *format)  */
+	  /* 	    <<std::endl; */
 		prefix = "stl";
 	}
 
@@ -1896,18 +2070,19 @@ char *PolygonGroup<T>::mk_stl_fname(
 	}
 	else {
 		sprintf(fname2, "%s_%s_%s.%s", fname1, rank_no.c_str(), extend.c_str(), 
-																prefix.c_str());
+			prefix.c_str());
 	}
 
 
 	//#define DEBUG
 #ifdef DEBUG
-	PL_DBGOS << __func__ << " prefix " <<prefix<<std::endl;
+	PL_DBGOS << __func__ << " prefix " <<prefix <<" format "<<*format <<std::endl;
 #endif //  DEBUG
 
 
 #ifdef DEBUG
 	PL_DBGOS << __func__ << " fname2 " <<fname2<<std::endl;
+	PL_DBGOS << __func__ << " acq_fullpath() " <<acq_fullpath()<<std::endl;
 #endif //  DEBUG
 	//#undef DEBUG
 	std::string tmp_fname = fname2;
@@ -1948,8 +2123,52 @@ int PolygonGroup<T>::create_global_id() {
 }
 
 
+// public //
+template <typename T>
+POLYLIB_STAT PolygonGroup<T>::replace_DVertex(int nscalar,int nvector){
+  return m_polygons->replace_DVertex(nscalar,nvector);
+}
+// public //
+template<typename T>
+POLYLIB_STAT PolygonGroup<T>::prepare_DVertex(int nscalar,int nvector){
+  //#define DEBUG
+#ifdef DEBUG
+  PL_DBGOSH << "PolygonGroup::"<< __func__ << " this "<< this <<std::endl;
+  PL_DBGOSH << "name"<< get_name()  <<std::endl;
+  PL_DBGOSH << "parent path "<< get_parent_path()  <<std::endl;
+  PL_DBGOSH << "polygon_ptr "<< m_polygons <<std::endl;
+#endif
+  return m_polygons->prepare_DVertex(nscalar,nvector);
+  //#undef DEBUG
+}
+// public //
 
+template<typename T>
+DVertexTriangle<T>* PolygonGroup<T>::add_DVertex_Triangle(Vec3<T>* v){
+  //#define DEBUG
+#ifdef DEBUG
+  PL_DBGOSH << "PolygonGroup::"<< __func__ << " this "<< this <<std::endl;
+  PL_DBGOSH << "name "<< get_name()  <<std::endl;
+  PL_DBGOSH << "parent path "<< get_parent_path()  <<std::endl;
+  PL_DBGOSH << "polygon_ptr "<< m_polygons <<std::endl;
+#endif
 
+#ifdef DEBUG
+  PL_DBGOSH << "PolygonGroup::"<< __func__
+ 	    <<" v0 "<<v[0]
+	    <<" v1 "<<v[1]
+	    <<" v2 "<<v[2]
+	    << std::endl;
+#endif
+
+  return m_polygons->add_DVertex_Triangle(v);
+  //#undef DEBUG
+}
+
+template<typename T>
+void PolygonGroup<T>::finalize_DVertex(){
+  m_polygons->finalize_DVertex();
+}
 
 } //namespace PolylibNS
 

@@ -17,6 +17,10 @@
 #include <algorithm>
 #include "file_io/TriMeshIO.h"
 #include "polygons/VertKDT.h"
+#include "polygons/DVertexManager.h"
+#include "polygons/DVertex.h"
+#include "polygons/Triangle.h"
+#include "polygons/DVertexTriangle.h"
 
 #define M_MAX_ELEMENTS 15	/// VTreeのノードが持つ最大要素数
 
@@ -27,7 +31,8 @@ template <typename T> class VTree;
 template <typename T> class PrivateTriangle;
 template <typename T> class VertexList;
 template <typename T> class VertKDT;
-
+class DVertexManager;
+ template <typename T> class DVertex;
 
   ////////////////////////////////////////////////////////////////////////////
   ///
@@ -224,6 +229,41 @@ template <typename T> class VertKDT;
 			      ) const;
 
     
+   /// Vertex -> DVertex  へのリプレース
+   ///
+   /// @param[in] nscalar スカラーデータ数
+   /// @param[in] nvector ベクトルデータ数
+
+   virtual POLYLIB_STAT replace_DVertex(int nscalar,int nvector);
+
+   /// Vertex -> DVertex  への準備
+   ///
+   /// @param[in] nscalar スカラーデータ数
+   /// @param[in] nvector ベクトルデータ数
+
+   virtual POLYLIB_STAT prepare_DVertex(int nscalar,int nvector);
+
+
+	//
+	/// DVertex 追加作成用
+	/// 
+	/// @param[in] v 頂点座標（３点）
+	///  @return    polygonへのpointer
+	///
+
+   virtual DVertexTriangle<T>* add_DVertex_Triangle(Vec3<T>* v);
+   	//
+	/// DVertex 追加作成後の重複頂点削除
+	/// 
+	///
+  
+   virtual void finalize_DVertex(){
+     vtx_compaction();
+     build();
+   }
+
+
+
     
     //=======================================================================
     // Setter/Getter
@@ -251,6 +291,23 @@ template <typename T> class VertKDT;
     ///
     VTree<T> *get_vtree() const {
       return m_vtree;
+    }
+    ///
+    /// DVertexManager
+    ///
+    /// @return KD木クラス。
+    ///
+    DVertexManager* DVM() const {
+      return m_DVM_ptr;
+    }
+    ///
+    /// hasDVertex
+    ///
+    /// @return KD木クラス。
+    ///
+    bool hasDVertex() const {
+      if(m_DVM_ptr==NULL) return false;
+      return true;
     }
 
     virtual void print_memory_size() const {
@@ -294,6 +351,7 @@ template <typename T> class VertKDT;
     ///
     void vtx_compaction();
 
+
     //=======================================================================
     // クラス変数
     //=======================================================================
@@ -305,6 +363,9 @@ template <typename T> class VertKDT;
 
     /// KD木クラス。
     VertKDT<T>	*m_vertKDT;
+
+    // DVertexManager
+    DVertexManager* m_DVM_ptr;
 
     /// MAX要素数。
     int		m_max_elements;
@@ -324,6 +385,7 @@ TriMesh<T>::TriMesh()
 	this->m_vertex_list = NULL;
 	m_max_elements = M_MAX_ELEMENTS;
 	m_tolerance = 1.0e-10; // tempolary
+	m_DVM_ptr=NULL;
 }
 // public /////////////////////////////////////////////////////////////////////
 template <typename T>
@@ -337,6 +399,7 @@ TriMesh<T>::TriMesh(T tolerance)
 	//std::cout << __func__ << " VertKDT is deleting "<<this-> m_vertKDT<< std::endl;
 	m_max_elements = M_MAX_ELEMENTS;
 	m_tolerance = tolerance;
+	m_DVM_ptr=NULL;
 }
 
 // public /////////////////////////////////////////////////////////////////////
@@ -366,6 +429,10 @@ TriMesh<T>::~TriMesh()
 
 	if (this->m_vertex_list != NULL) {
 	  delete this->m_vertex_list;
+	}
+
+	if(m_DVM_ptr!=NULL){
+	  delete m_DVM_ptr;
 	}
 
 }
@@ -864,6 +931,8 @@ void TriMesh<T>::init_tri_list()
 {
   if (this->m_tri_list == NULL) {
     this->m_tri_list = new std::vector<PrivateTriangle<T>*>;
+
+    
   }
   else {
     typename std::vector<PrivateTriangle<T>*>::iterator itr;
@@ -874,8 +943,13 @@ void TriMesh<T>::init_tri_list()
     }
     
     this->m_tri_list->clear();
-  }
 
+  }
+  if(m_vtree!=NULL) {
+    delete m_vtree;
+    m_vtree=NULL;
+  }
+  
 }
 
 // private ////////////////////////////////////////////////////////////////////
@@ -986,7 +1060,7 @@ template <typename T>
      for(int i=0;i<3;i++){
 #ifdef DEBUG
        if(counter<10)
-	 /PL_DBGOSH << "pointer map old "<<tmp_list[i]<< " new "<<(*vtx_map)[tmp_list[i]]<<std::endl;
+	 PL_DBGOSH << "pointer map old "<<tmp_list[i]<< " new "<<(*vtx_map)[tmp_list[i]]<<std::endl;
 #endif
        if((*vtx_map)[tmp_list[i]]==tmp_list[i]){
 	 // do nothing
@@ -1022,7 +1096,251 @@ template <typename T>
    }
 
 }
+ //// public ///////////////////////////////
+ template <typename T> 
+   POLYLIB_STAT TriMesh<T>::replace_DVertex(int nscalar,int nvector){
+#define DEBUG
+#ifdef DEBUG
+   PL_DBGOSH << __func__ << std::endl;
+#endif
 
+   m_DVM_ptr = new DVertexManager(nscalar,nvector);
+   std::map<Vertex<T>*,Vertex<T>*> ptr_map;
+#ifdef DEBUG
+   PL_DBGOSH << __func__ << " 1"<<std::endl;
+#endif
+
+   VertexList<T>* new_dv=new VertexList<T>(this->m_tolerance);
+
+#ifdef DEBUG
+   PL_DBGOSH << __func__ << " 2"<<std::endl;
+#endif
+   
+   const std::vector<Vertex<T>*>* old_vlist=this->m_vertex_list->get_vertex_lists();
+
+#ifdef DEBUG
+   PL_DBGOSH << __func__ << " 3"<<std::endl;
+#endif
+
+
+   for(typename std::vector<Vertex<T>*>::const_iterator itr = old_vlist->begin();
+
+       itr != old_vlist->end();
+       itr++){
+
+#ifdef DEBUG
+     PL_DBGOSH << __func__ << "3 1"<<std::endl;
+#endif
+
+     Vec3<T> pos((*(*itr))[0],(*(*itr))[1],(*(*itr))[2]);
+
+#ifdef DEBUG
+     PL_DBGOSH << __func__ << "3 2"<< pos <<std::endl;
+#endif
+
+     Vertex<T>* dv;
+     DVertex<T>* tmp = new DVertex<T>(m_DVM_ptr) ;
+     dv=tmp;
+
+#ifdef DEBUG
+     PL_DBGOSH << __func__ << " 3 3"<< std::endl;
+#endif
+
+     *dv=pos;
+
+#ifdef DEBUG
+     PL_DBGOSH << __func__ << "3 4"<<std::endl;
+#endif
+
+     new_dv->vtx_add_nocheck( dv);
+
+#ifdef DEBUG
+     PL_DBGOSH << __func__ << "3 5"<< std::endl;
+#endif
+
+     ptr_map.insert(std::pair<Vertex<T>*,Vertex<T>*>( (*itr) , dv) );
+
+#ifdef DEBUG
+     PL_DBGOSH << __func__ << "3 6"<<std::endl;
+#endif
+
+   }
+
+#ifdef DEBUG
+     PL_DBGOSH << __func__ << " 4"<<std::endl;
+#endif
+
+       typename std::vector<PrivateTriangle<T>*>* 
+	 tmp_dvertex_tri_list=new std::vector<PrivateTriangle<T>*>;
+
+   //  三角形リストの頂点ポインタ付け替え
+     if (this->m_tri_list != NULL) {
+#ifdef DEBUG
+     PL_DBGOSH << __func__ << " 4 1"<<std::endl;
+#endif
+
+
+       typename std::vector<PrivateTriangle<T>*>::iterator itr;
+       for (itr = this->m_tri_list->begin(); itr != this->m_tri_list->end(); itr++) {
+
+#ifdef DEBUG
+     PL_DBGOSH << __func__ << " 4 2"<<std::endl;
+#endif
+
+	 Vertex<T>** tmpvert=(*itr)->get_vertex();
+	 DVertex<T>* tmpdvert[3];
+
+#ifdef DEBUG
+     PL_DBGOSH << __func__ << " 4 2 1"<<std::endl;
+#endif
+     
+	 tmpvert[0]=ptr_map[tmpvert[0]];
+	 tmpvert[1]=ptr_map[tmpvert[1]];
+	 tmpvert[2]=ptr_map[tmpvert[2]];
+
+#ifdef DEBUG
+     PL_DBGOSH << __func__ << " 4 2 2"<<std::endl;
+#endif
+     
+	 tmpdvert[0]=dynamic_cast<DVertex<T>*>(tmpvert[0]);
+	 tmpdvert[1]=dynamic_cast<DVertex<T>*>(tmpvert[1]);
+	 tmpdvert[2]=dynamic_cast<DVertex<T>*>(tmpvert[2]);
+
+	 // (*itr)->set_vertexes(tmpvert,true,true);
+	 //make new DVertexTriangle
+
+#ifdef DEBUG
+     PL_DBGOSH << __func__ << " 4 3"<<std::endl;
+#endif
+
+	 DVertexTriangle<T>* new_dv_tri= new DVertexTriangle<T>(tmpdvert,(*itr)->get_id());
+#ifdef DEBUG
+     PL_DBGOSH << __func__ << " 4 4"<<std::endl;
+#endif
+
+     tmp_dvertex_tri_list->push_back((PrivateTriangle<T>*)new_dv_tri);
+
+       }
+
+
+     }
+#ifdef DEBUG
+     PL_DBGOSH << __func__ << " 5"<<std::endl;
+#endif
+
+
+     
+     init_vertex_list();
+     this->m_vertex_list=new_dv;
+
+
+     init_tri_list();
+     this->m_tri_list= tmp_dvertex_tri_list;
+       
+     build();
+
+#ifdef DEBUG
+   PL_DBGOSH << __func__ << " end"<<std::endl;
+#endif
+#undef DEBUG
+   return PLSTAT_OK;
+ }
+ /////////////////////////
+
+ template <typename T> 
+   POLYLIB_STAT TriMesh<T>::prepare_DVertex(int nscalar,int nvector){
+   //#define DEBUG
+#ifdef DEBUG
+   PL_DBGOSH << __func__ << std::endl;
+#endif
+   init_tri_list();
+   init_vertex_list();
+   m_DVM_ptr = new DVertexManager(nscalar,nvector);
+#ifdef DEBUG
+   PL_DBGOSH << __func__ 
+	     << " nscalar="<<m_DVM_ptr->nscalar()
+	     << " nvector="<<m_DVM_ptr->nvector()
+     //<< " size="<<m_DVM_ptr->size() 
+	     << " this " <<this
+	     << std::endl;
+#endif
+#undef DEBUG   
+
+
+
+   return PLSTAT_OK;
+ }
+ /////////////////////////
+
+ template <typename T>
+   DVertexTriangle<T>* 
+   TriMesh<T>::add_DVertex_Triangle(Vec3<T>* v){
+
+   //#define DEBUG
+#ifdef DEBUG
+  PL_DBGOSH << "TriMesh::"<< __func__
+ 	    <<" v0 "<<v[0]
+	    <<" v1 "<<v[1]
+	    <<" v2 "<<v[2]
+	    << std::endl;
+#endif
+
+  //   Vertex<T>* vtx_list[3];   
+  DVertex<T>* vtx_list[3];   
+  //  PL_DBGOSH << "TriMesh::"<< __func__<< " 1" << " this "<<this <<std::endl;
+  for(int i=0;i<3;i++){
+    Vertex<T>* dv;
+
+#ifdef DEBUG
+     if(m_DVM_ptr==NULL){
+              PL_DBGOSH << __func__  << "m_DVM_ptr is NULL"<<std::endl;
+     }else {
+       PL_DBGOSH << __func__ 
+		 << " nscalar="<<m_DVM_ptr->nscalar()
+		 << " nvector="<<m_DVM_ptr->nvector()
+	 //<< " size="<<m_DVM_ptr->size()
+		 << std::endl;
+     }
+#endif
+
+
+     //     PL_DBGOSH << "TriMesh::"<< __func__<< " 2 1 "<< m_DVM_ptr<<std::endl;
+     DVertex<T>* tmp = new DVertex<T>(m_DVM_ptr) ;
+     //PL_DBGOSH << "TriMesh::"<< __func__<< " 2 1 "<<*tmp<<std::endl;
+     //PL_DBGOSH << "TriMesh::"<< __func__<< " 2 1 "<<tmp<<std::endl;
+     dv=tmp;
+
+       //   if(m_DVM_ptr->size()==4){
+       // PL_DBGOSH << "TriMesh::"<< __func__<< " 2 1 1"<<std::endl;
+       //     DVertex<T,float>* tmp = new DVertex<T,float>(m_DVM_ptr) ;
+       // PL_DBGOSH << "TriMesh::"<< __func__<< " 2 1 1"<<std::endl;
+       //   }   else if(m_DVM_ptr->size()==8){
+       // PL_DBGOSH << "TriMesh::"<< __func__<< " 2 1 2"<<std::endl;
+       //     DVertex<T,double>* tmp = new  DVertex<T,double>(m_DVM_ptr);
+       // PL_DBGOSH << "TriMesh::"<< __func__<< " 2 1 2"<<std::endl;
+       //     dv=tmp;
+       //   }
+     //PL_DBGOSH << "TriMesh::"<< __func__<< " 2 2 "<<std::endl;
+       *dv=v[i];
+       //PL_DBGOSH << "TriMesh::"<< __func__<< " 2 3 "<<std::endl;
+   //   *tmp=*dv;
+   //vtx_list[i]=dv;
+   vtx_list[i]=tmp;
+
+   //PL_DBGOSH << "TriMesh::"<< __func__<< " 2 4 "<<*tmp<<std::endl;
+   if(this->m_vertex_list!=NULL)  this->m_vertex_list->vtx_add_nocheck((Vertex<T>*)tmp);
+     else    PL_DBGOSH << "TriMesh::"<< __func__<< " null VertexList"<<std::endl;
+   }
+  //PL_DBGOSH << "TriMesh::"<< __func__<< "add triangle"<<std::endl;
+
+   int n_tri=this->m_tri_list->size();
+
+   DVertexTriangle<T>* ret=new DVertexTriangle<T>(vtx_list,n_tri);
+   
+   this->m_tri_list->push_back( (PrivateTriangle<T>*) ret);
+
+   return ret;
+   }
 
 } //namespace PolylibNS
 

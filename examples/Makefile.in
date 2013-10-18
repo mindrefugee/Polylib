@@ -75,7 +75,8 @@ host_triplet = @host@
 @SERIALTARGET_TRUE@	test_obj$(EXEEXT) \
 @SERIALTARGET_TRUE@	test_xyzrgb_statuette_stl$(EXEEXT) \
 @SERIALTARGET_TRUE@	test_obj2$(EXEEXT) test_obj3$(EXEEXT) \
-@SERIALTARGET_TRUE@	test_obj4$(EXEEXT) test_read$(EXEEXT)
+@SERIALTARGET_TRUE@	test_obj4$(EXEEXT) test_read$(EXEEXT) \
+@SERIALTARGET_TRUE@	test_DVertex$(EXEEXT)
 subdir = examples
 DIST_COMMON = README $(dist_noinst_DATA) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
@@ -103,6 +104,12 @@ test2_DEPENDENCIES =
 test2_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CXXLD) $(test2_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+am_test_DVertex_OBJECTS = test_DVertex-test_DVertex.$(OBJEXT)
+test_DVertex_OBJECTS = $(am_test_DVertex_OBJECTS)
+test_DVertex_DEPENDENCIES =
+test_DVertex_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(test_DVertex_CXXFLAGS) \
+	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 am_test_mpi_OBJECTS = test_mpi-test_mpi.$(OBJEXT)
 test_mpi_OBJECTS = $(am_test_mpi_OBJECTS)
 test_mpi_DEPENDENCIES =
@@ -229,14 +236,15 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(test_SOURCES) $(test2_SOURCES) $(test_mpi_SOURCES) \
-	$(test_mpi2_SOURCES) $(test_mpi3_SOURCES) \
+SOURCES = $(test_SOURCES) $(test2_SOURCES) $(test_DVertex_SOURCES) \
+	$(test_mpi_SOURCES) $(test_mpi2_SOURCES) $(test_mpi3_SOURCES) \
 	$(test_mpi_xyzrgb1_SOURCES) $(test_mpi_xyzrgb2_SOURCES) \
 	$(test_mpi_xyzrgb4_SOURCES) $(test_mpi_xyzrgb8_SOURCES) \
 	$(test_obj_SOURCES) $(test_obj2_SOURCES) $(test_obj3_SOURCES) \
 	$(test_obj4_SOURCES) $(test_read_SOURCES) $(test_vtx_SOURCES) \
 	$(test_vtx_float_SOURCES) $(test_xyzrgb_statuette_stl_SOURCES)
-DIST_SOURCES = $(test_SOURCES) $(test2_SOURCES) $(test_mpi_SOURCES) \
+DIST_SOURCES = $(test_SOURCES) $(test2_SOURCES) \
+	$(test_DVertex_SOURCES) $(test_mpi_SOURCES) \
 	$(test_mpi2_SOURCES) $(test_mpi3_SOURCES) \
 	$(test_mpi_xyzrgb1_SOURCES) $(test_mpi_xyzrgb2_SOURCES) \
 	$(test_mpi_xyzrgb4_SOURCES) $(test_mpi_xyzrgb8_SOURCES) \
@@ -424,6 +432,8 @@ test_read_SOURCES = test_read.cxx
 test_read_CXXFLAGS = -I$(top_builddir)/include @TP_CFLAGS@
 test_vtx_float_SOURCES = test_vtx_float.cxx
 test_vtx_float_CXXFLAGS = -I$(top_builddir)/include @TP_CFLAGS@
+test_DVertex_SOURCES = test_DVertex.cxx
+test_DVertex_CXXFLAGS = -I$(top_builddir)/include @TP_CFLAGS@
 test_xyzrgb_statuette_stl_SOURCES = test_xyzrgb_statuette_stl.cxx
 test_xyzrgb_statuette_stl_CXXFLAGS = -I$(top_builddir)/include @TP_CFLAGS@
 test_mpi_SOURCES = test_mpi.cxx
@@ -501,6 +511,12 @@ test_read_LDADD = \
     @TP_LDFLAGS@ -lstdc++
 
 test_vtx_float_LDADD = \
+    -L$(top_builddir)/src/.libs -lPOLY \
+    @MPI_LDFLAGS@ \
+    @MPI_LIBS@ \
+    @TP_LDFLAGS@ -lstdc++
+
+test_DVertex_LDADD = \
     -L$(top_builddir)/src/.libs -lPOLY \
     @MPI_LDFLAGS@ \
     @MPI_LIBS@ \
@@ -610,6 +626,9 @@ test$(EXEEXT): $(test_OBJECTS) $(test_DEPENDENCIES) $(EXTRA_test_DEPENDENCIES)
 test2$(EXEEXT): $(test2_OBJECTS) $(test2_DEPENDENCIES) $(EXTRA_test2_DEPENDENCIES) 
 	@rm -f test2$(EXEEXT)
 	$(test2_LINK) $(test2_OBJECTS) $(test2_LDADD) $(LIBS)
+test_DVertex$(EXEEXT): $(test_DVertex_OBJECTS) $(test_DVertex_DEPENDENCIES) $(EXTRA_test_DVertex_DEPENDENCIES) 
+	@rm -f test_DVertex$(EXEEXT)
+	$(test_DVertex_LINK) $(test_DVertex_OBJECTS) $(test_DVertex_LDADD) $(LIBS)
 test_mpi$(EXEEXT): $(test_mpi_OBJECTS) $(test_mpi_DEPENDENCIES) $(EXTRA_test_mpi_DEPENDENCIES) 
 	@rm -f test_mpi$(EXEEXT)
 	$(test_mpi_LINK) $(test_mpi_OBJECTS) $(test_mpi_LDADD) $(LIBS)
@@ -664,6 +683,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test-test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test2-test2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_DVertex-test_DVertex.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_mpi-test_mpi.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_mpi2-test_mpi2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_mpi3-CarGroup.Po@am__quote@
@@ -730,6 +750,20 @@ test2-test2.obj: test2.cxx
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='test2.cxx' object='test2-test2.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test2_CXXFLAGS) $(CXXFLAGS) -c -o test2-test2.obj `if test -f 'test2.cxx'; then $(CYGPATH_W) 'test2.cxx'; else $(CYGPATH_W) '$(srcdir)/test2.cxx'; fi`
+
+test_DVertex-test_DVertex.o: test_DVertex.cxx
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_DVertex_CXXFLAGS) $(CXXFLAGS) -MT test_DVertex-test_DVertex.o -MD -MP -MF $(DEPDIR)/test_DVertex-test_DVertex.Tpo -c -o test_DVertex-test_DVertex.o `test -f 'test_DVertex.cxx' || echo '$(srcdir)/'`test_DVertex.cxx
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/test_DVertex-test_DVertex.Tpo $(DEPDIR)/test_DVertex-test_DVertex.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='test_DVertex.cxx' object='test_DVertex-test_DVertex.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_DVertex_CXXFLAGS) $(CXXFLAGS) -c -o test_DVertex-test_DVertex.o `test -f 'test_DVertex.cxx' || echo '$(srcdir)/'`test_DVertex.cxx
+
+test_DVertex-test_DVertex.obj: test_DVertex.cxx
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_DVertex_CXXFLAGS) $(CXXFLAGS) -MT test_DVertex-test_DVertex.obj -MD -MP -MF $(DEPDIR)/test_DVertex-test_DVertex.Tpo -c -o test_DVertex-test_DVertex.obj `if test -f 'test_DVertex.cxx'; then $(CYGPATH_W) 'test_DVertex.cxx'; else $(CYGPATH_W) '$(srcdir)/test_DVertex.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/test_DVertex-test_DVertex.Tpo $(DEPDIR)/test_DVertex-test_DVertex.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='test_DVertex.cxx' object='test_DVertex-test_DVertex.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_DVertex_CXXFLAGS) $(CXXFLAGS) -c -o test_DVertex-test_DVertex.obj `if test -f 'test_DVertex.cxx'; then $(CYGPATH_W) 'test_DVertex.cxx'; else $(CYGPATH_W) '$(srcdir)/test_DVertex.cxx'; fi`
 
 test_mpi-test_mpi.o: test_mpi.cxx
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_mpi_CXXFLAGS) $(CXXFLAGS) -MT test_mpi-test_mpi.o -MD -MP -MF $(DEPDIR)/test_mpi-test_mpi.Tpo -c -o test_mpi-test_mpi.o `test -f 'test_mpi.cxx' || echo '$(srcdir)/'`test_mpi.cxx

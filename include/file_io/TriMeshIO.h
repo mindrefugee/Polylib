@@ -18,6 +18,7 @@
 #include "common/PolylibCommon.h"
 #include "file_io/stl.h"
 #include "file_io/obj.h"
+#include "file_io/vtk.h"
 #include "polygons/Vertex.h"
 #include "polygons/VertexList.h"
 #include "polygons/Triangle.h"
@@ -89,6 +90,8 @@ public:
 	static const std::string FMT_OBJ_AA;	///< ascii 
 	static const std::string FMT_OBJ_B;		///< binary
 	static const std::string FMT_OBJ_BB;	///< binary
+	static const std::string FMT_VTK_A;	///< vtk ascii
+	static const std::string FMT_VTK_B;	///< vtk binary
 	static const std::string DEFAULT_FMT;	///< TrimeshIO.cxxで定義している値
 
 };
@@ -171,9 +174,10 @@ POLYLIB_STAT TriMeshIO::save(
 			     std::string	fname, 
 			     std::string	fmt
 			     ) {
-#define DEBUG
+   //#define DEBUG
 #ifdef DEBUG
-    PL_DBGOS<<__FUNCTION__ << " saving file..."<<std::endl;
+   PL_DBGOS<<"TriMeshIO::"<<__FUNCTION__ << " saving file..."<<std::endl;
+   PL_DBGOS<<__FUNCTION__ << " fname fmt "<<fname <<" "<<fmt <<std::endl;
 #endif
 	if (tri_list == NULL) {
 		PL_ERROSH << "[ERROR]:TriMeshIO::save():tri_list is NULL." << std::endl;
@@ -199,11 +203,17 @@ POLYLIB_STAT TriMeshIO::save(
 	else if (fmt == FMT_OBJ_BB) {
 	  return obj_bb_save(vertex_list,tri_list, fname);
 	}
+	else if (fmt == FMT_VTK_A) {
+	  return vtk_a_save(vertex_list,tri_list, fname);
+	}
+	else if (fmt == FMT_VTK_B) {
+	  return vtk_b_save(vertex_list,tri_list, fname);
+	}
 	else{
 		return PLSTAT_UNKNOWN_STL_FORMAT;
 	}
 
-#undef DEBUG
+	//#undef DEBUG
 }
 
 
